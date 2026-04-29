@@ -259,6 +259,18 @@ class SynthesisAgent:
 
         # Build metadata
         agent_confidences = {r.agent_name: r.confidence_score for r in sub_reports}
+
+        # Persist the source registry so the UI can resolve source_ids → URLs
+        source_registry_serialized = {
+            sid: {
+                "url":         src.url,
+                "title":       src.title,
+                "snippet":     src.snippet[:200],
+                "source_type": src.source_type.value if hasattr(src.source_type, "value") else str(src.source_type),
+            }
+            for sid, src in global_sources.items()
+        }
+
         metadata = {
             "generated_by": "DeepDiligence v1",
             "specialist_confidences": agent_confidences,
@@ -267,6 +279,7 @@ class SynthesisAgent:
             "total_sources": sum(len(r.sources) for r in sub_reports),
             "investment_highlights": tool_input.get("investment_highlights", []),
             "investment_risks": tool_input.get("investment_risks", []),
+            "source_registry": source_registry_serialized,
             **extra_metadata,
         }
 

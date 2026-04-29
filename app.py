@@ -132,7 +132,7 @@ def _run_and_display(company: str, ticker: str | None) -> None:
 
 # ─── Memo renderer ────────────────────────────────────────────────────────────
 
-def _render_section(section: Any) -> None:
+def _render_section(section: Any, source_registry: dict | None = None) -> None:
     st.markdown(
         f"### {section.title} &nbsp; {_conf_badge(section.confidence_score)}",
         unsafe_allow_html=True,
@@ -151,8 +151,24 @@ def _render_section(section: Any) -> None:
         with st.expander(f"📋 {len(section.claims)} supporting claims"):
             for claim in section.claims:
                 n = len(claim.source_ids)
-                tag = f"({n} source{'s' if n != 1 else ''})" if n else "⚠️ no source"
-                st.markdown(f"- [{claim.confidence:.0%}] {claim.text} *{tag}*")
+                if n == 0:
+                    source_links = "⚠️ no source"
+                elif source_registry:
+                    links = []
+                    for i, sid in enumerate(claim.source_ids, 1):
+                        src = source_registry.get(sid)
+                        if src and src.get("url"):
+                            title = src.get("title") or src["url"]
+                            links.append(f"[{i}]({src['url']} \"{title}\")")
+                        else:
+                            links.append(f"[{i}]")
+                    source_links = " ".join(links)
+                else:
+                    source_links = f"({n} source{'s' if n != 1 else ''})"
+                st.markdown(
+                    f"- [{claim.confidence:.0%}] {claim.text} {source_links}",
+                    unsafe_allow_html=False,
+                )
 
 
 def _render_memo(memo: InvestmentMemo) -> None:
@@ -186,9 +202,10 @@ def _render_memo(memo: InvestmentMemo) -> None:
                     st.markdown(f"- {r}")
 
     # Per-section tabs
+    source_registry = memo.metadata.get("source_registry", {})
     for i, section in enumerate(memo.sections):
         with tabs[i + 1]:
-            _render_section(section)
+            _render_section(section, source_registry)
 
     # Stats tab
     with tabs[-2]:

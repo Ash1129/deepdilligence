@@ -1,0 +1,141 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Header } from "@/components/Header";
+import { ArrowRight, BarChart3, DollarSign, Users, AlertTriangle } from "lucide-react";
+import heroSkyscraper from "@/assets/hero-skyscraper.jpg";
+
+export const Route = createFileRoute("/")({
+  component: Index,
+});
+
+const QUICK_PICKS = [
+  { company: "Apple Inc", ticker: "AAPL" },
+  { company: "Microsoft", ticker: "MSFT" },
+  { company: "NVIDIA", ticker: "NVDA" },
+  { company: "Tesla", ticker: "TSLA" },
+  { company: "Amazon", ticker: "AMZN" },
+];
+
+const AGENTS = [
+  {
+    icon: <DollarSign className="h-5 w-5" />,
+    emoji: "💰",
+    title: "Financial",
+    desc: "10-K filings, margins, cash flow & growth signals.",
+  },
+  {
+    icon: <Users className="h-5 w-5" />,
+    emoji: "👥",
+    title: "Team & Culture",
+    desc: "Leadership, hiring velocity, glassdoor & retention.",
+  },
+  {
+    icon: <BarChart3 className="h-5 w-5" />,
+    emoji: "📊",
+    title: "Market",
+    desc: "TAM, competitive moat & industry positioning.",
+  },
+  {
+    icon: <AlertTriangle className="h-5 w-5" />,
+    emoji: "⚠️",
+    title: "Risk",
+    desc: "Sentiment, regulatory exposure & tail risks.",
+  },
+];
+
+function Index() {
+  const navigate = useNavigate();
+  return (
+    <div className="relative min-h-screen">
+      {/* Hero background image — fades into page background */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[110vh] overflow-hidden"
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroSkyscraper})` }}
+        />
+        {/* Tint with warm amber sampled from the image, then fade into page bg */}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,_oklch(0.25_0.05_60_/_0.15)_0%,_oklch(0.22_0.06_55_/_0.35)_45%,_oklch(0.20_0.05_50_/_0.85)_75%,_var(--background)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.78_0.14_70_/_0.18),_transparent_60%)]" />
+      </div>
+      <Header />
+      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24">
+        {/* Hero */}
+        <section className="relative pt-20 pb-16 text-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs text-foreground/80 backdrop-blur">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
+            Multi-agent equity research, live
+          </div>
+          <h1 className="text-balance text-5xl font-bold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.65)] sm:text-6xl">
+            AI-Powered Investment
+            <br /> Due Diligence
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg text-white/85 drop-shadow-[0_1px_10px_rgba(0,0,0,0.6)]">
+            Four specialist agents. One investment memo. Weekly rankings.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => navigate({ to: "/analyze" })}
+              className="group inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary-hover"
+            >
+              Analyse a Company
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+            </button>
+            <Link
+              to="/weekly"
+              className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-black/40 px-5 py-2.5 text-sm font-semibold text-foreground backdrop-blur transition hover:bg-black/60"
+            >
+              Weekly Rankings
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {/* Quick picks */}
+          <div className="mt-10">
+            <p className="mb-3 text-xs uppercase tracking-wider text-white/70">
+              Quick start
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {QUICK_PICKS.map((q) => (
+                <button
+                  key={q.ticker}
+                  onClick={() =>
+                    navigate({
+                      to: "/analyze",
+                      search: { company: q.company, ticker: q.ticker },
+                    })
+                  }
+                  className="tnum rounded-md border border-white/10 bg-black/40 px-3 py-1.5 text-sm text-foreground backdrop-blur transition hover:border-primary/60 hover:bg-black/60"
+                >
+                  {q.company}{" "}
+                  <span className="text-white/60">({q.ticker})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Agents */}
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {AGENTS.map((a) => (
+            <div
+              key={a.title}
+              className="group rounded-xl border border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] p-5 backdrop-blur-sm transition hover:border-primary/40 hover:bg-[oklch(0.26_0.05_55_/_0.7)]"
+            >
+              <div className="mb-3 flex items-center gap-2 text-2xl">
+                <span>{a.emoji}</span>
+              </div>
+              <h3 className="text-base font-semibold text-white">
+                {a.title}
+              </h3>
+              <p className="mt-1 text-sm text-white/75">{a.desc}</p>
+            </div>
+          ))}
+        </section>
+      </main>
+    </div>
+  );
+}

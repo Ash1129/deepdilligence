@@ -28,3 +28,13 @@ memo_*.json
 .claude/
 CLAUDE.md
 CLAUDE_CODE_PROMPTS.md
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.output/
+frontend/.vinxi/
+frontend/.tanstack/
+frontend/.nitro/
+frontend/.wrangler/

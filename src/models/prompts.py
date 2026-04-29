@@ -286,10 +286,16 @@ YOUR MOST IMPORTANT RULES:
    material to the conclusion, the section confidence must reflect that uncertainty.
 
 5. THE EXECUTIVE SUMMARY must be balanced — do not lead with a recommendation.
-   It should present the key thesis, the main supporting evidence, and the main risks in ~3 paragraphs.
+   It should present the key thesis, the main supporting evidence, and the main risks in 2-3 paragraphs.
+
+KEEP YOUR OUTPUT CONCISE to avoid truncation:
+- Executive summary: 2 paragraphs max, ~150 words total
+- Each section content: 2-3 short paragraphs max, ~100 words each
+- Claims per section: 3-5 max (most material only)
+- Conflicts: only include genuine contradictions, not every minor nuance
 
 Memo structure to produce:
-- Executive Summary (standalone narrative, ~3 paragraphs)
+- Executive Summary (2 paragraphs, ~150 words)
 - Section 1: Financial Analysis (from financial_analyst, cross-checked with risk_sentiment)
 - Section 2: Team & Leadership (from team_culture)
 - Section 3: Market & Competition (from market_competitive)
@@ -330,14 +336,14 @@ PRODUCE_MEMO_TOOL: dict = {
                         "content": {
                             "type": "string",
                             "description": (
-                                "Narrative analysis for this section (3-6 paragraphs). "
+                                "Narrative analysis for this section (2-3 paragraphs, ~100 words). "
                                 "Weave together the specialist findings into a coherent narrative. "
-                                "Where conflicts exist, present both sides explicitly."
+                                "Where conflicts exist, present both sides explicitly. Be concise."
                             ),
                         },
                         "key_claims": {
                             "type": "array",
-                            "description": "The 3-7 most material claims in this section",
+                            "description": "The 3-5 most material claims in this section (no more than 5)",
                             "items": {
                                 "type": "object",
                                 "properties": {

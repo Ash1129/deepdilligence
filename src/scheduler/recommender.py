@@ -126,6 +126,12 @@ You will receive a set of due-diligence memos, one per company.  Your job is to:
 
 Be decisive. Differentiate clearly between companies — do not rate everything HOLD.
 Every claim in your rationale must be traceable to specific findings in the memos.
+
+IMPORTANT — keep your output SHORT to avoid truncation:
+- bull_case: 1 sentence max
+- bear_case: 1 sentence max
+- rationale:  2 sentences max
+- macro_commentary: 2 sentences max
 """
 
 
@@ -169,41 +175,120 @@ class RecommendationEngine:
             ],
             tools=[_RECOMMEND_TOOL],
             tool_choice={"type": "function", "function": {"name": "produce_weekly_recommendations"}},
-            max_completion_tokens=8000,
+            max_completion_tokens=32000,
         )
 
         message = response.choices[0].message
         if not message.tool_calls:
             raise RuntimeError("Recommendation tool not called by model")
 
-        raw = json.loads(message.tool_calls[0].function.arguments)
+        raw_args = message.tool_calls[0].function.arguments
+        try:
+            raw = json.loads(raw_args)
+        except json.JSONDecodeError as exc:
+            # Response was truncated — try to salvage by truncating to last complete object
+            logger.warning("Tool call JSON truncated (%s) — attempting partial recovery", exc)
+            raw = self._recover_truncated_json(raw_args)
+
         return self._build_report(raw, memos)
 
     # ─── Helpers ─────────────────────────────────────────────────────────────
 
     def _format_memos(self, memos: dict[str, InvestmentMemo]) -> str:
-        """Render all memos as structured text for the recommendation prompt."""
+        """Render all memos as compact structured text for the recommendation prompt.
+
+        Per-company budget is intentionally tight so many companies can fit in
+        one context without truncating the model's output JSON.
+        """
+        # Allocate fewer chars per company when the universe is large
+        n = len(memos)
+        summary_chars  = max(200, 600  // max(n // 5, 1))
+        section_chars  = max(100, 250  // max(n // 5, 1))
+
         parts: list[str] = []
         for ticker, memo in memos.items():
-            parts.append(f"\n{'='*60}")
-            parts.append(f"COMPANY: {memo.company_name} ({ticker})")
-            parts.append(f"Overall confidence: {memo.overall_confidence:.0%}")
-            parts.append(f"\nEXECUTIVE SUMMARY:\n{memo.executive_summary[:800]}")
+            parts.append(f"\n{'='*50}")
+            parts.append(f"{memo.company_name} ({ticker}) | conf={memo.overall_confidence:.0%}")
+
+            parts.append(memo.executive_summary[:summary_chars])
 
             hi = memo.metadata.get("investment_highlights", [])
             ri = memo.metadata.get("investment_risks", [])
             if hi:
-                parts.append("\nSTRENGTHS: " + " | ".join(hi[:3]))
+                parts.append("STRENGTHS: " + " | ".join(hi[:2]))
             if ri:
-                parts.append("KEY RISKS: " + " | ".join(ri[:3]))
+                parts.append("RISKS: " + " | ".join(ri[:2]))
 
             for section in memo.sections:
-                parts.append(f"\n[{section.title}] conf={section.confidence_score:.0%}")
-                parts.append(section.content[:400])
-                if section.conflicting_claims:
-                    parts.append(f"  ⚠ {len(section.conflicting_claims)} cross-agent conflicts")
+                n_conflicts = len(section.conflicting_claims)
+                conflict_note = f" ⚠{n_conflicts}conflicts" if n_conflicts else ""
+                parts.append(
+                    f"[{section.title} {section.confidence_score:.0%}{conflict_note}] "
+                    f"{section.content[:section_chars]}"
+                )
 
         return "\n".join(parts)
+
+    @staticmethod
+    def _recover_truncated_json(raw: str) -> dict:
+        """Best-effort recovery when the model's tool-call JSON is truncated.
+
+        Uses regex to find all complete rating objects (each ends with a
+        "confidence": <number> } pattern), then wraps them in a minimal valid
+        top-level structure with safe defaults for missing fields.
+        """
+        import re
+
+        # Every complete rating object ends with a confidence value field.
+        # Find where the last one ends.
+        confidence_hits = list(re.finditer(r'"confidence"\s*:\s*[\d.]+\s*\}', raw))
+        if not confidence_hits:
+            raise RuntimeError(
+                "Recommendation JSON is truncated and could not be recovered. "
+                "Try again with fewer companies."
+            )
+
+        last_rating_end = confidence_hits[-1].end()
+
+        # Find where the ratings array opens
+        ratings_key = raw.find('"ratings"')
+        if ratings_key == -1:
+            raise RuntimeError(
+                "Recommendation JSON is truncated and could not be recovered. "
+                "Try again with fewer companies."
+            )
+        array_open = raw.find("[", ratings_key)
+        if array_open == -1:
+            raise RuntimeError(
+                "Recommendation JSON is truncated and could not be recovered. "
+                "Try again with fewer companies."
+            )
+
+        # Slice out just the ratings array content (possibly incomplete)
+        ratings_fragment = raw[array_open : last_rating_end]
+
+        # Build a minimal valid top-level object with defaults for fields
+        # that were not yet emitted when the response was cut off.
+        candidate = (
+            '{"ratings": ' + ratings_fragment + '], '
+            '"top_picks": [], '
+            '"avoid": [], '
+            '"macro_commentary": "Report truncated — rerun with fewer companies for full analysis.", '
+            '"sector_views": {"General": "See individual ratings above"}}'
+        )
+
+        try:
+            result = json.loads(candidate)
+            logger.info(
+                "Partial JSON recovery succeeded — %d ratings recovered",
+                len(result.get("ratings", [])),
+            )
+            return result
+        except json.JSONDecodeError:
+            raise RuntimeError(
+                "Recommendation JSON is truncated and could not be recovered. "
+                "Try again with fewer companies."
+            )
 
     def _build_report(self, raw: dict, memos: dict[str, InvestmentMemo]) -> WeeklyReport:
         """Convert raw tool output into a validated WeeklyReport."""
