@@ -1,0 +1,35 @@
+{
+  "company_name": "Apple Inc",
+  "ticker": "AAPL",
+  "sector": "Technology",
+  "description": "Apple Inc designs, manufactures, and markets consumer electronics, software, and services. Known for iPhone, Mac, iPad, and a growing services business.",
+  "known_facts": [
+    "iPhone is Apple's largest revenue segment",
+    "Apple has over $90 billion in annual services revenue",
+    "Apple has a market capitalization exceeding $3 trillion",
+    "Tim Cook is Apple's CEO",
+    "Apple has significant cash reserves and share buyback program",
+    "Apple Silicon M-series chips power Mac computers",
+    "Apple operates the App Store, Apple Music, iCloud, and Apple TV+",
+    "Apple has over 1 billion active iPhone users worldwide"
+  ],
+  "known_risks": [
+    "Antitrust investigations by EU and US Department of Justice regarding App Store",
+    "Heavy dependence on iPhone revenue concentration",
+    "Supply chain concentration in China and geopolitical risk",
+    "Slowing iPhone upgrade cycle and market saturation",
+    "Regulatory pressure on App Store commission rates",
+    "Competition from Android ecosystem"
+  ],
+  "known_strengths": [
+    "Unmatched brand loyalty and premium pricing power",
+    "Vertically integrated hardware and software ecosystem",
+    "Services segment growing faster than hardware",
+    "Strong recurring revenue from subscriptions",
+    "Leading chip design capability with Apple Silicon",
+    "Industry-leading customer retention rates"
+  ],
+  "expected_sentiment": "positive",
+  "min_expected_confidence": 0.65,
+  "tags": ["big_tech", "consumer_electronics", "services", "regulated"]
+}

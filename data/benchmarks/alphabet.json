@@ -1,0 +1,35 @@
+{
+  "company_name": "Alphabet",
+  "ticker": "GOOGL",
+  "sector": "Technology",
+  "description": "Alphabet Inc is the parent company of Google, YouTube, Google Cloud, DeepMind, and Waymo. It is the dominant global search engine and online advertising platform.",
+  "known_facts": [
+    "Google Search holds over 90% global market share in search",
+    "Sundar Pichai is CEO of both Alphabet and Google",
+    "YouTube is the second-largest search engine and largest video platform",
+    "Google Cloud is the third-largest cloud provider with over $30 billion annual revenue",
+    "DeepMind and Google Brain merged into Google DeepMind in 2023",
+    "Waymo operates commercial autonomous robotaxi services in multiple US cities",
+    "Google advertising revenue including Search and YouTube exceeds $200 billion annually",
+    "Gemini is Google's flagship large language model series"
+  ],
+  "known_risks": [
+    "DOJ antitrust lawsuit ruling that Google illegally monopolized search",
+    "AI-generated search threatening traditional search advertising model",
+    "Competition from Microsoft Bing with Copilot AI integration",
+    "YouTube content moderation and creator disputes",
+    "EU Digital Markets Act compliance costs and potential breakup remedies",
+    "Gemini AI model controversies and accuracy issues"
+  ],
+  "known_strengths": [
+    "Google Search generates enormous cash flow from dominant market position",
+    "YouTube advertising and subscription revenue growing strongly",
+    "Google Cloud accelerating with AI workloads and enterprise adoption",
+    "DeepMind and Google Brain leading AI research capabilities",
+    "Waymo self-driving technology leadership in the autonomous vehicle sector",
+    "Android ecosystem spanning billions of devices globally"
+  ],
+  "expected_sentiment": "positive",
+  "min_expected_confidence": 0.65,
+  "tags": ["big_tech", "advertising", "cloud", "ai", "regulated", "antitrust"]
+}

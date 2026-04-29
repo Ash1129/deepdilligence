@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/
+
+# Generated local caches and outputs
+data/cache/
+data/recommendations/
+memo_*.json
+*.pdf
+
+# Local assistant/tooling state
+.claude/
+CLAUDE.md
+CLAUDE_CODE_PROMPTS.md

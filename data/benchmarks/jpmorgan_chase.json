@@ -1,0 +1,35 @@
+{
+  "company_name": "JPMorgan Chase",
+  "ticker": "JPM",
+  "sector": "Financial Services",
+  "description": "JPMorgan Chase & Co is the largest US bank by assets. It operates through Consumer & Community Banking, Corporate & Investment Bank, Commercial Banking, and Asset & Wealth Management segments.",
+  "known_facts": [
+    "JPMorgan Chase is the largest US bank with over $3.9 trillion in assets",
+    "Jamie Dimon is JPMorgan's CEO and has led the bank since 2005",
+    "JPMorgan is the leading US investment bank by advisory and underwriting fees",
+    "JPMorgan acquired First Republic Bank in 2023 during the regional banking crisis",
+    "JPMorgan's consumer banking serves over 80 million US households",
+    "Chase Sapphire is a leading premium credit card franchise",
+    "JPMorgan has invested over $15 billion in technology annually",
+    "JPMorgan operates in over 100 countries"
+  ],
+  "known_risks": [
+    "Interest rate sensitivity — net interest income fluctuates with Fed policy changes",
+    "Commercial real estate loan exposure creating credit risk",
+    "Regulatory capital requirements increasing under Basel III endgame rules",
+    "Cybersecurity threats targeting financial institutions",
+    "Succession planning given Jamie Dimon's potential eventual departure",
+    "Consumer credit quality deterioration in a higher interest rate environment"
+  ],
+  "known_strengths": [
+    "Diversified business model across consumer, investment banking, and asset management",
+    "Industry-leading return on equity consistently above peers",
+    "Strong capital position and fortress balance sheet",
+    "First Republic acquisition added high-net-worth banking clients at a discount",
+    "Technology investment driving digital banking adoption",
+    "Global investment banking relationships with top corporations"
+  ],
+  "expected_sentiment": "positive",
+  "min_expected_confidence": 0.55,
+  "tags": ["financial_services", "banking", "regulated", "large_cap"]
+}

@@ -1,0 +1,35 @@
+{
+  "company_name": "Meta Platforms",
+  "ticker": "META",
+  "sector": "Technology",
+  "description": "Meta Platforms Inc operates Facebook, Instagram, WhatsApp, and Messenger. It is investing heavily in the metaverse via Reality Labs and in AI infrastructure.",
+  "known_facts": [
+    "Meta's Family of Apps includes Facebook, Instagram, WhatsApp, and Messenger",
+    "Mark Zuckerberg is Meta's founder and CEO",
+    "Reality Labs division develops Quest VR headsets and metaverse products",
+    "Meta's advertising revenue accounts for over 95% of total revenue",
+    "Meta has over 3 billion daily active users across its family of apps",
+    "Llama is Meta's open-source large language model family",
+    "Meta invested over $35 billion in capex in 2024 for AI infrastructure",
+    "Instagram Reels competes directly with TikTok for short-form video"
+  ],
+  "known_risks": [
+    "Reality Labs division has accumulated over $50 billion in operating losses",
+    "Heavy advertising revenue concentration creating cyclical revenue risk",
+    "Regulatory pressure in EU over data privacy (GDPR fines) and US teen safety",
+    "TikTok competition for user attention particularly among younger demographics",
+    "Apple iOS privacy changes reducing ad targeting effectiveness",
+    "Antitrust scrutiny from FTC seeking to break up the company"
+  ],
+  "known_strengths": [
+    "Dominant social media platforms with unmatched global reach",
+    "AI-powered advertising platform with precision targeting",
+    "WhatsApp monetization opportunity in business messaging",
+    "Open-source Llama strategy attracting AI developer ecosystem",
+    "Strong free cash flow despite Reality Labs investments",
+    "Threads platform growing as alternative to Twitter/X"
+  ],
+  "expected_sentiment": "positive",
+  "min_expected_confidence": 0.60,
+  "tags": ["big_tech", "social_media", "advertising", "ai", "regulated"]
+}

@@ -1,0 +1,35 @@
+{
+  "company_name": "Amazon",
+  "ticker": "AMZN",
+  "sector": "Technology & Retail",
+  "description": "Amazon.com Inc operates e-commerce, cloud computing (AWS), digital streaming, and artificial intelligence businesses. AWS is the world's largest cloud provider.",
+  "known_facts": [
+    "AWS is the world's largest cloud computing platform with over 30% market share",
+    "Andy Jassy is Amazon's CEO since 2021",
+    "Amazon Prime has over 200 million subscribers globally",
+    "Amazon is the largest e-commerce company in the United States",
+    "AWS generates the majority of Amazon's operating income despite smaller revenue share",
+    "Amazon acquired MGM in 2022 and Whole Foods in 2017",
+    "Amazon Advertising is a fast-growing multi-billion dollar segment",
+    "Amazon operates a third-party marketplace with millions of sellers"
+  ],
+  "known_risks": [
+    "FTC antitrust lawsuit challenging Amazon's marketplace dominance",
+    "Labor relations challenges and unionization efforts at Amazon warehouses",
+    "Rising fulfillment and logistics costs pressuring retail margins",
+    "Competition from Walmart, Shopify, and international e-commerce players",
+    "AWS competition from Microsoft Azure and Google Cloud",
+    "Regulatory scrutiny over third-party seller practices"
+  ],
+  "known_strengths": [
+    "AWS profitability subsidizes investment in retail and logistics",
+    "Prime ecosystem creates high-value recurring subscription revenue",
+    "Logistics network and last-mile delivery advantage",
+    "Advertising business with high margins growing rapidly",
+    "AI integration across AWS, Alexa, and retail operations",
+    "Scale advantages in procurement, warehousing, and shipping"
+  ],
+  "expected_sentiment": "positive",
+  "min_expected_confidence": 0.65,
+  "tags": ["big_tech", "cloud", "ecommerce", "regulated", "ai"]
+}

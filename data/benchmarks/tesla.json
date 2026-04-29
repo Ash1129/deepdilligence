@@ -1,0 +1,35 @@
+{
+  "company_name": "Tesla",
+  "ticker": "TSLA",
+  "sector": "Automotive & Clean Energy",
+  "description": "Tesla Inc designs, develops, manufactures, and sells electric vehicles, energy generation, and storage systems. It also develops autonomous driving technology.",
+  "known_facts": [
+    "Tesla is the largest pure-play electric vehicle manufacturer in the US",
+    "Elon Musk is Tesla's CEO and largest individual shareholder",
+    "Tesla operates Gigafactories in Nevada, Texas, Germany, and Shanghai",
+    "Autopilot and Full Self-Driving are Tesla's autonomous driving software products",
+    "Tesla's energy storage and solar business is a growing secondary segment",
+    "Tesla's Model Y was the best-selling car globally in 2023",
+    "Supercharger network has over 50,000 chargers worldwide",
+    "Tesla began delivering Cybertruck in late 2023"
+  ],
+  "known_risks": [
+    "NHTSA investigations into Autopilot and Full Self-Driving safety",
+    "Elon Musk key-person risk and distraction from other ventures (X, SpaceX, xAI)",
+    "Increasing competition from BYD, GM, Ford, and other EV makers",
+    "Declining automotive gross margins from aggressive price cuts",
+    "Chinese market exposure and BYD competition in home market",
+    "Multiple recall notices for over-the-air software safety issues"
+  ],
+  "known_strengths": [
+    "Vertically integrated manufacturing and battery supply chain",
+    "Largest Supercharger network providing charging infrastructure advantage",
+    "Software-defined vehicle enabling over-the-air updates and new revenue",
+    "First-mover advantage and strong brand in the EV segment",
+    "Energy business providing diversification beyond automotive",
+    "Dojo supercomputer for training autonomous driving AI"
+  ],
+  "expected_sentiment": "neutral",
+  "min_expected_confidence": 0.60,
+  "tags": ["automotive", "ev", "clean_energy", "high_risk", "key_person_risk"]
+}

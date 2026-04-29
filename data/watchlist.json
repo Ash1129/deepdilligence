@@ -1,0 +1,16 @@
+{
+  "description": "Weekly analysis watchlist — edit this file to add/remove stocks",
+  "updated": "2026-04-28",
+  "stocks": [
+    {"company": "Apple Inc",       "ticker": "AAPL", "sector": "Technology"},
+    {"company": "Microsoft",       "ticker": "MSFT", "sector": "Technology"},
+    {"company": "NVIDIA",          "ticker": "NVDA", "sector": "Semiconductors"},
+    {"company": "Alphabet",        "ticker": "GOOGL","sector": "Technology"},
+    {"company": "Amazon",          "ticker": "AMZN", "sector": "Technology & Retail"},
+    {"company": "Meta Platforms",  "ticker": "META", "sector": "Technology"},
+    {"company": "Tesla",           "ticker": "TSLA", "sector": "Automotive & Clean Energy"},
+    {"company": "Netflix",         "ticker": "NFLX", "sector": "Entertainment"},
+    {"company": "Salesforce",      "ticker": "CRM",  "sector": "Enterprise Software"},
+    {"company": "JPMorgan Chase",  "ticker": "JPM",  "sector": "Financial Services"}
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "company_name": "Salesforce",
+  "ticker": "CRM",
+  "sector": "Enterprise Software",
+  "description": "Salesforce Inc provides cloud-based customer relationship management software. Products include Sales Cloud, Service Cloud, Marketing Cloud, and the Einstein AI platform.",
+  "known_facts": [
+    "Salesforce is the world's largest CRM software vendor",
+    "Marc Benioff is Salesforce's co-founder and CEO",
+    "Salesforce acquired Slack in 2021 for $27.7 billion",
+    "Einstein AI is Salesforce's AI layer embedded across its product suite",
+    "Salesforce operates on a subscription software-as-a-service model",
+    "Salesforce acquired Tableau in 2019 for data analytics capabilities",
+    "Salesforce has over 150,000 customers including most Fortune 500 companies",
+    "Salesforce Data Cloud unifies customer data across its platform"
+  ],
+  "known_risks": [
+    "Activist investor pressure to cut costs and improve margins",
+    "Slack integration challenges and underperformance relative to acquisition price",
+    "Competition from Microsoft Dynamics, SAP, and HubSpot",
+    "Macroeconomic headwinds causing enterprise software spending slowdowns",
+    "CEO Marc Benioff key-person dependency",
+    "Integration complexity from multiple large acquisitions"
+  ],
+  "known_strengths": [
+    "Market-leading position in CRM with high switching costs",
+    "Agentforce AI agents platform as new growth driver",
+    "Large partner ecosystem of implementation specialists",
+    "Strong recurring revenue with multi-year enterprise contracts",
+    "Slack providing enterprise collaboration platform",
+    "Data Cloud enabling cross-product data integration"
+  ],
+  "expected_sentiment": "positive",
+  "min_expected_confidence": 0.60,
+  "tags": ["enterprise_software", "saas", "crm", "ai"]
+}

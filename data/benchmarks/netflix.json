@@ -1,0 +1,35 @@
+{
+  "company_name": "Netflix",
+  "ticker": "NFLX",
+  "sector": "Entertainment & Streaming",
+  "description": "Netflix Inc is the world's largest subscription streaming service with over 300 million subscribers. It produces and licenses film and television content globally.",
+  "known_facts": [
+    "Netflix has over 300 million paid subscribers globally",
+    "Greg Peters is Netflix's co-CEO alongside Ted Sarandos since 2023",
+    "Netflix launched an ad-supported tier in 2022 which is growing rapidly",
+    "Netflix produced Oscar-winning content including Roma and The Power of the Dog",
+    "Netflix cracked down on password sharing in 2023 driving subscriber growth",
+    "Netflix operates in over 190 countries",
+    "Original content spending exceeds $17 billion annually",
+    "Netflix games division offers mobile gaming included with subscription"
+  ],
+  "known_risks": [
+    "Intense competition from Disney+, HBO Max, Apple TV+, Amazon Prime Video, and Peacock",
+    "Content costs inflation reducing free cash flow",
+    "Subscriber growth saturation in mature US and European markets",
+    "Content localization challenges in international markets",
+    "Loss of licensed content as studios launch competing platforms",
+    "Password sharing crackdown may have exhausted its subscriber boost"
+  ],
+  "known_strengths": [
+    "First-mover advantage and largest content library in streaming",
+    "Ad-supported tier opens new high-margin revenue stream",
+    "International growth especially in Asia-Pacific and Latin America",
+    "Data-driven content investment and recommendation algorithm",
+    "Live events strategy including sports rights as new growth driver",
+    "Strong brand recognition globally"
+  ],
+  "expected_sentiment": "positive",
+  "min_expected_confidence": 0.60,
+  "tags": ["entertainment", "streaming", "subscription", "high_competition"]
+}

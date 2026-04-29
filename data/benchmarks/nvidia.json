@@ -1,0 +1,35 @@
+{
+  "company_name": "NVIDIA",
+  "ticker": "NVDA",
+  "sector": "Semiconductors",
+  "description": "NVIDIA Corporation designs graphics processing units (GPUs) and system-on-chip units. It dominates the AI accelerator market with its H100 and Blackwell GPU architectures.",
+  "known_facts": [
+    "NVIDIA's H100 and A100 GPUs are the dominant AI training accelerators",
+    "Data Center segment surpassed Gaming as NVIDIA's largest revenue source",
+    "Jensen Huang is NVIDIA's founder and CEO",
+    "CUDA software platform creates high switching costs for AI developers",
+    "NVIDIA's revenue grew over 100% year-over-year in 2024",
+    "Blackwell GPU architecture launched in 2024 as successor to Hopper",
+    "NVIDIA supplies chips to Microsoft, Google, Amazon, Meta, and major cloud providers",
+    "NVIDIA holds over 80% market share in AI training accelerators"
+  ],
+  "known_risks": [
+    "US export restrictions limiting sales of advanced chips to China",
+    "Customer concentration risk — top hyperscaler customers account for large revenue share",
+    "AMD and Intel developing competing AI accelerator chips",
+    "Potential bubble risk if AI capex spending decelerates",
+    "Supply chain constraints limiting ability to meet surging demand",
+    "Geopolitical risk given chip manufacturing in Taiwan (TSMC)"
+  ],
+  "known_strengths": [
+    "Near-monopoly position in AI GPU market with 80%+ share",
+    "CUDA ecosystem creates massive developer lock-in",
+    "First-mover advantage in AI infrastructure hardware",
+    "Gross margins exceeding 70% on data center products",
+    "Continuous chip architecture innovation maintaining performance lead",
+    "NVLink and NVSwitch networking for large-scale AI clusters"
+  ],
+  "expected_sentiment": "very_positive",
+  "min_expected_confidence": 0.65,
+  "tags": ["semiconductors", "ai", "high_growth", "export_controls"]
+}

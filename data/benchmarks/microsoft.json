@@ -1,0 +1,34 @@
+{
+  "company_name": "Microsoft",
+  "ticker": "MSFT",
+  "sector": "Technology",
+  "description": "Microsoft Corporation develops, licenses, and supports software, services, and devices. Segments include Productivity & Business Processes, Intelligent Cloud (Azure), and Personal Computing.",
+  "known_facts": [
+    "Azure is Microsoft's cloud platform and the second-largest cloud provider",
+    "Microsoft Office 365 and Microsoft 365 generate significant subscription revenue",
+    "Satya Nadella is Microsoft's CEO",
+    "Microsoft acquired Activision Blizzard for $69 billion in 2023",
+    "GitHub was acquired by Microsoft in 2018",
+    "Microsoft has a strategic partnership and investment in OpenAI",
+    "LinkedIn is a Microsoft subsidiary",
+    "Windows remains a major product line for PC operating systems"
+  ],
+  "known_risks": [
+    "Antitrust scrutiny over Activision acquisition and cloud market practices",
+    "Competition from Amazon Web Services and Google Cloud in cloud computing",
+    "Cybersecurity incidents including state-sponsored breaches",
+    "AI integration risks and costs from OpenAI partnership",
+    "Regulatory pressure in Europe regarding cloud and software bundling"
+  ],
+  "known_strengths": [
+    "Azure growing at double-digit rates with enterprise sticky workloads",
+    "Diversified revenue across cloud, software, gaming, and LinkedIn",
+    "Strong enterprise relationships and Microsoft 365 adoption",
+    "Copilot AI integration across product suite",
+    "Massive free cash flow generation enabling R&D and acquisitions",
+    "Strong developer ecosystem through GitHub and Azure DevOps"
+  ],
+  "expected_sentiment": "very_positive",
+  "min_expected_confidence": 0.65,
+  "tags": ["big_tech", "cloud", "enterprise_software", "ai"]
+}
