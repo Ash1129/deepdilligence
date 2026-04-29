@@ -301,7 +301,12 @@ class TestSynthesisBuildMemo:
                 {
                     "title": "Financials",
                     "content": "Strong revenue growth.",
-                    "key_claims": [{"text": "Revenue grew 20%", "source_ids": ["s1"], "confidence": 0.85}],
+                    "key_claims": [{
+                        "text": "Revenue grew 20%",
+                        "source_ids": ["s1"],
+                        "confidence": 0.85,
+                        "originating_agent": "financial_analyst",
+                    }],
                     "confidence_score": 0.80,
                     "cross_agent_conflicts": [],
                 }
@@ -316,6 +321,9 @@ class TestSynthesisBuildMemo:
         assert len(memo.sections) == 1
         assert memo.overall_confidence == 0.78
         assert memo.metadata["investment_highlights"] == ["Strong growth"]
+        assert "source_registry" in memo.metadata
+        assert "financial_analyst::s1" in memo.metadata["source_registry"]
+        assert memo.sections[0].claims[0].source_ids == ["financial_analyst::s1"]
 
     def test_build_memo_confidence_clamping(self):
         agent = self._get_synthesis_agent()
@@ -334,8 +342,8 @@ class TestSynthesisBuildMemo:
         assert 0.0 <= memo.overall_confidence <= 1.0
         assert 0.0 <= memo.sections[0].confidence_score <= 1.0
 
-    def test_build_memo_source_namespacing(self):
-        """Source IDs from different agents should both be accessible."""
+    def test_build_memo_source_registry_is_self_contained(self):
+        """Source registry should include namespaced, agent-attributed source entries."""
         agent = self._get_synthesis_agent()
         sub_reports = [
             AgentSubReport(
@@ -360,15 +368,27 @@ class TestSynthesisBuildMemo:
             "sections": [{
                 "title": "T",
                 "content": "...",
-                "key_claims": [{"text": "A claim", "source_ids": ["s1"], "confidence": 0.8}],
+                "key_claims": [{
+                    "text": "A claim",
+                    "source_ids": ["s1"],
+                    "confidence": 0.8,
+                    "originating_agent": "risk_sentiment",
+                }],
                 "confidence_score": 0.7,
                 "cross_agent_conflicts": [],
             }],
             "overall_confidence": 0.7,
         }
-        # Should not raise; s1 resolves via bare ID fallback
         memo = agent._build_memo(tool_input, sub_reports, {})
-        assert len(memo.sections[0].claims[0].source_ids) == 1
+        registry = memo.metadata["source_registry"]
+
+        assert set(registry) == {"financial_analyst::s1", "risk_sentiment::s1"}
+        assert registry["financial_analyst::s1"]["originating_agent"] == "financial_analyst"
+        assert registry["risk_sentiment::s1"]["originating_agent"] == "risk_sentiment"
+        assert registry["risk_sentiment::s1"]["original_id"] == "s1"
+        assert registry["risk_sentiment::s1"]["url"] == "https://example.com/s1"
+        assert registry["risk_sentiment::s1"]["retrieved_at"]
+        assert memo.sections[0].claims[0].source_ids == ["risk_sentiment::s1"]
 
     def test_extract_json_from_code_block(self):
         """_extract_json_from_text should handle ```json ... ``` blocks."""

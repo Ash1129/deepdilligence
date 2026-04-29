@@ -1,8 +1,8 @@
 """Patch existing memo caches to add source_registry to metadata.
 
-Reads the 4 agent sub-report caches for each memo, builds the source registry
-(source_id → {url, title, snippet, source_type}), and writes it into the
-memo's metadata without changing anything else.
+Reads the 4 agent sub-report caches for each memo, builds a self-contained
+source registry keyed by namespaced source IDs, rewrites unambiguous old bare
+source_ids to those namespaced IDs, and writes everything into memo.metadata.
 
 Run once:
     python3.11 scripts/patch_source_registry.py
@@ -40,9 +40,10 @@ def load_agent_report(agent_name: str, company_name: str, ticker: str) -> dict |
     return None
 
 
-def build_registry_from_agents(company_name: str, ticker: str) -> dict:
-    """Load all 4 agent reports and merge their sources into one registry."""
+def build_registry_from_agents(company_name: str, ticker: str) -> tuple[dict, dict]:
+    """Load agent reports and build registry plus bare-ID aliases."""
     registry: dict[str, dict] = {}
+    bare_to_namespaced: dict[str, list[str]] = {}
     for agent_name in AGENT_NAMES:
         report = load_agent_report(agent_name, company_name, ticker)
         if not report:
@@ -51,16 +52,38 @@ def build_registry_from_agents(company_name: str, ticker: str) -> dict:
             sid = src.get("id", "")
             if not sid or not src.get("url"):
                 continue
+            namespaced = f"{agent_name}::{sid}"
             entry = {
+                "id": namespaced,
+                "original_id": sid,
+                "originating_agent": agent_name,
                 "url":         src["url"],
                 "title":       src.get("title", src["url"])[:200],
-                "snippet":     src.get("snippet", "")[:200],
+                "snippet":     src.get("snippet", ""),
                 "source_type": src.get("source_type", "other"),
+                "retrieved_at": src.get("retrieved_at"),
             }
-            namespaced = f"{agent_name}::{sid}"
             registry[namespaced] = entry
-            registry[sid] = entry          # bare ID for LLM-generated references
-    return registry
+            bare_to_namespaced.setdefault(sid, []).append(namespaced)
+
+    aliases = {sid: ids[0] for sid, ids in bare_to_namespaced.items() if len(ids) == 1}
+    return registry, aliases
+
+
+def rewrite_claim_source_ids(memo: dict, registry: dict, aliases: dict) -> int:
+    """Rewrite old bare claim source_ids to canonical registry IDs when possible."""
+    rewritten = 0
+    for section in memo.get("sections", []):
+        for claim in section.get("claims", []):
+            new_ids: list[str] = []
+            for sid in claim.get("source_ids", []):
+                resolved = sid if sid in registry else aliases.get(sid, sid)
+                if resolved != sid:
+                    rewritten += 1
+                if resolved not in new_ids:
+                    new_ids.append(resolved)
+            claim["source_ids"] = new_ids
+    return rewritten
 
 
 def patch_all() -> None:
@@ -85,7 +108,7 @@ def patch_all() -> None:
         ticker       = memo_path.stem.replace("_memo", "")
         company_name = memo.get("company_name", ticker)
 
-        registry = build_registry_from_agents(company_name, ticker)
+        registry, aliases = build_registry_from_agents(company_name, ticker)
 
         if not registry:
             print(f"  ⚠  {ticker:6}  {company_name:30} — no agent caches found, skipping")
@@ -93,12 +116,16 @@ def patch_all() -> None:
             continue
 
         memo.setdefault("metadata", {})["source_registry"] = registry
+        rewritten = rewrite_claim_source_ids(memo, registry, aliases)
 
         with open(memo_path, "w") as f:
             json.dump(memo, f, indent=2)
 
         patched += 1
-        print(f"  ✅ {ticker:6}  {company_name:30} — {len(registry)} source entries added")
+        print(
+            f"  ✅ {ticker:6}  {company_name:30} — "
+            f"{len(registry)} source entries added, {rewritten} claim refs rewritten"
+        )
 
     print(f"\nDone. Patched: {patched}  |  Already OK: {skipped}  |  No agent cache: {no_sources}")
 

@@ -344,7 +344,13 @@ function MemoView({ memo }: { memo: InvestmentMemo }) {
         {tab === "export" && <ExportTab memo={memo} />}
         {sectionTabs.map(
           (st, i) =>
-            tab === st.id && <SectionTab key={st.id} section={memo.sections[i]} />,
+            tab === st.id && (
+              <SectionTab
+                key={st.id}
+                section={memo.sections[i]}
+                sourceRegistry={memo.metadata.source_registry ?? {}}
+              />
+            ),
         )}
       </div>
     </div>
@@ -389,7 +395,13 @@ function SummaryTab({ memo }: { memo: InvestmentMemo }) {
   );
 }
 
-function SectionTab({ section }: { section: InvestmentMemo["sections"][number] }) {
+function SectionTab({
+  section,
+  sourceRegistry,
+}: {
+  section: InvestmentMemo["sections"][number];
+  sourceRegistry: NonNullable<InvestmentMemo["metadata"]["source_registry"]>;
+}) {
   const [showClaims, setShowClaims] = useState(false);
   const [showConflicts, setShowConflicts] = useState(false);
   return (
@@ -421,6 +433,36 @@ function SectionTab({ section }: { section: InvestmentMemo["sections"][number] }
                   </span>
                 </div>
               </div>
+              {c.source_ids.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {c.source_ids.map((sid, sourceIndex) => {
+                    const src = sourceRegistry[sid];
+                    if (!src?.url) {
+                      return (
+                        <span
+                          key={sid}
+                          className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-white/50"
+                        >
+                          Source {sourceIndex + 1}
+                        </span>
+                      );
+                    }
+                    return (
+                      <a
+                        key={sid}
+                        href={src.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`${src.title}${src.originating_agent ? ` • ${src.originating_agent}` : ""}`}
+                        className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-white/65 transition hover:border-[oklch(0.75_0.14_65)] hover:text-white"
+                      >
+                        Source {sourceIndex + 1}
+                        {src.originating_agent ? ` · ${src.originating_agent.replace("_", " ")}` : ""}
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
             </li>
           ))}
         </ul>

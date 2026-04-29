@@ -17,7 +17,6 @@ from src.models.schemas import (
     ConflictingClaim,
     InvestmentMemo,
     Source,
-    SourceType,
     SynthesizedSection,
 )
 from src.utils.config import SYNTHESIS_MODEL, get_openai_api_key
@@ -229,20 +228,16 @@ class SynthesisAgent:
         Preserves source objects from the originating agent reports so that all
         citations in the final memo are traceable to the original scraped data.
         """
-        # Build a global source registry from all agent reports
-        global_sources: dict[str, Source] = {}
-        for report in sub_reports:
-            for src in report.sources:
-                # Namespace source IDs to avoid collisions between agents
-                namespaced_id = f"{report.agent_name}::{src.id}"
-                global_sources[namespaced_id] = src
-                # Also keep the bare ID for backward-compat references from the LLM
-                global_sources[src.id] = src
+        source_lookup, source_registry, bare_source_aliases = self._build_source_registry(sub_reports)
 
         # Build each SynthesizedSection
         sections: list[SynthesizedSection] = []
         for sec in tool_input.get("sections", []):
-            key_claims = self._build_claims(sec.get("key_claims", []), global_sources)
+            key_claims = self._build_claims(
+                sec.get("key_claims", []),
+                source_lookup,
+                bare_source_aliases,
+            )
             cross_conflicts = self._build_cross_conflicts(sec.get("cross_agent_conflicts", []))
 
             sections.append(
@@ -260,17 +255,6 @@ class SynthesisAgent:
         # Build metadata
         agent_confidences = {r.agent_name: r.confidence_score for r in sub_reports}
 
-        # Persist the source registry so the UI can resolve source_ids → URLs
-        source_registry_serialized = {
-            sid: {
-                "url":         src.url,
-                "title":       src.title,
-                "snippet":     src.snippet[:200],
-                "source_type": src.source_type.value if hasattr(src.source_type, "value") else str(src.source_type),
-            }
-            for sid, src in global_sources.items()
-        }
-
         metadata = {
             "generated_by": "DeepDiligence v1",
             "specialist_confidences": agent_confidences,
@@ -279,7 +263,7 @@ class SynthesisAgent:
             "total_sources": sum(len(r.sources) for r in sub_reports),
             "investment_highlights": tool_input.get("investment_highlights", []),
             "investment_risks": tool_input.get("investment_risks", []),
-            "source_registry": source_registry_serialized,
+            "source_registry": source_registry,
             **extra_metadata,
         }
 
@@ -294,13 +278,69 @@ class SynthesisAgent:
             metadata=metadata,
         )
 
+    def _build_source_registry(
+        self,
+        sub_reports: list[AgentSubReport],
+    ) -> tuple[dict[str, Source], dict[str, dict], dict[str, str]]:
+        """Build a self-contained, namespaced source registry.
+
+        Returns:
+            source_lookup: Namespaced source ID → Source object for validation.
+            source_registry: Namespaced source ID → JSON-serializable source metadata.
+            bare_source_aliases: Bare source ID → namespaced ID only when unambiguous.
+        """
+        source_lookup: dict[str, Source] = {}
+        source_registry: dict[str, dict] = {}
+        bare_to_namespaced: dict[str, list[str]] = {}
+
+        for report in sub_reports:
+            for src in report.sources:
+                original_id = str(src.id)
+                namespaced_id = f"{report.agent_name}::{original_id}"
+                source_lookup[namespaced_id] = src
+                bare_to_namespaced.setdefault(original_id, []).append(namespaced_id)
+                source_registry[namespaced_id] = {
+                    "id": namespaced_id,
+                    "original_id": original_id,
+                    "originating_agent": report.agent_name,
+                    "url": src.url,
+                    "title": src.title,
+                    "snippet": src.snippet,
+                    "source_type": (
+                        src.source_type.value
+                        if hasattr(src.source_type, "value")
+                        else str(src.source_type)
+                    ),
+                    "retrieved_at": src.retrieved_at.isoformat(),
+                }
+
+        bare_source_aliases = {
+            original_id: ids[0]
+            for original_id, ids in bare_to_namespaced.items()
+            if len(ids) == 1
+        }
+        return source_lookup, source_registry, bare_source_aliases
+
     def _build_claims(
-        self, raw_claims: list[dict], source_registry: dict[str, Source]
+        self,
+        raw_claims: list[dict],
+        source_lookup: dict[str, Source],
+        bare_source_aliases: dict[str, str],
     ) -> list[AgentClaim]:
-        """Build AgentClaim objects, filtering source_ids to those that actually exist."""
+        """Build AgentClaim objects with source_ids resolved to registry keys."""
         claims: list[AgentClaim] = []
         for c in raw_claims:
-            valid_ids = [sid for sid in c.get("source_ids", []) if sid in source_registry]
+            originating_agent = str(c.get("originating_agent", ""))
+            valid_ids = []
+            for sid in c.get("source_ids", []):
+                resolved = self._resolve_source_id(
+                    source_id=str(sid),
+                    originating_agent=originating_agent,
+                    source_lookup=source_lookup,
+                    bare_source_aliases=bare_source_aliases,
+                )
+                if resolved and resolved not in valid_ids:
+                    valid_ids.append(resolved)
             claims.append(
                 AgentClaim(
                     text=str(c.get("text", "")),
@@ -309,6 +349,24 @@ class SynthesisAgent:
                 )
             )
         return claims
+
+    @staticmethod
+    def _resolve_source_id(
+        source_id: str,
+        originating_agent: str,
+        source_lookup: dict[str, Source],
+        bare_source_aliases: dict[str, str],
+    ) -> str | None:
+        """Resolve model-emitted source IDs to canonical source_registry keys."""
+        if source_id in source_lookup:
+            return source_id
+
+        if originating_agent:
+            candidate = f"{originating_agent}::{source_id}"
+            if candidate in source_lookup:
+                return candidate
+
+        return bare_source_aliases.get(source_id)
 
     def _build_cross_conflicts(self, raw_conflicts: list[dict]) -> list[ConflictingClaim]:
         """Build ConflictingClaim objects from cross-agent conflict dicts."""

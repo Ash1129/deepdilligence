@@ -44,6 +44,19 @@ export interface InvestmentMemo {
     specialist_confidences: Record<string, number>;
     investment_highlights: string[];
     investment_risks: string[];
+    source_registry?: Record<
+      string,
+      {
+        id?: string;
+        original_id?: string;
+        originating_agent?: string;
+        url: string;
+        title: string;
+        snippet: string;
+        source_type: string;
+        retrieved_at?: string;
+      }
+    >;
   };
 }
 
