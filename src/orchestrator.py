@@ -13,6 +13,7 @@ from src.agents.risk import RiskAgent
 from src.agents.synthesis import SynthesisAgent
 from src.agents.team import TeamAgent
 from src.models.schemas import AgentSubReport, InvestmentMemo
+from src.utils.company_validation import validate_company_identity
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class Orchestrator:
         self._on_agent_complete = on_agent_complete or (lambda name, report: None)
         self._on_synthesis_start = on_synthesis_start or (lambda: None)
 
-        self._synthesis = SynthesisAgent(company_name)
+        self._synthesis: SynthesisAgent | None = None
 
     # ─── Sync entry point ────────────────────────────────────────────────────
 
@@ -79,6 +80,11 @@ class Orchestrator:
         including Streamlit (no asyncio event loop required).
         """
         start = time.perf_counter()
+        identity = validate_company_identity(self.company_name, self.ticker)
+        self.company_name = identity.company_name
+        self.ticker = identity.ticker
+        self._synthesis = SynthesisAgent(self.company_name)
+
         logger.info("Orchestrator starting for %s (ticker=%s)", self.company_name, self.ticker)
 
         sub_reports = self._run_specialists_parallel()

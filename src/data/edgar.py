@@ -48,6 +48,29 @@ def lookup_cik(ticker: str) -> str | None:
 
 
 @disk_cache(subfolder="edgar")
+def lookup_company_title(ticker: str) -> str | None:
+    """Look up the SEC company title for a stock ticker.
+
+    Args:
+        ticker: Stock ticker symbol (e.g., 'AAPL').
+
+    Returns:
+        Company title from the SEC ticker registry, or None if not found.
+    """
+    resp = requests.get(EDGAR_COMPANY_TICKERS_URL, headers=_get_headers(), timeout=15)
+    resp.raise_for_status()
+    data = resp.json()
+
+    ticker_upper = ticker.upper()
+    for entry in data.values():
+        if entry.get("ticker", "").upper() == ticker_upper:
+            return str(entry.get("title", "")).strip() or None
+
+    logger.warning("Ticker %s not found in EDGAR company tickers", ticker)
+    return None
+
+
+@disk_cache(subfolder="edgar")
 def get_company_facts(ticker: str) -> dict[str, Any] | None:
     """Fetch XBRL company facts (financial data) for a ticker.
 

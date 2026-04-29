@@ -30,6 +30,7 @@ from src.data.edgar import (
     EDGAR_COMPANY_TICKERS_URL,
     EDGAR_SUBMISSIONS_URL,
     EDGAR_XBRL_COMPANYFACTS_URL,
+    lookup_company_title,
     get_company_facts,
     get_filings,
     get_revenue_data,
@@ -38,6 +39,7 @@ from src.data.edgar import (
 from src.data.jobs import _looks_like_job_title, scrape_careers_page
 from src.data.news import NEWSAPI_EVERYTHING_URL, fetch_company_news
 from src.data.web import scrape_url
+from src.utils.company_validation import CompanyValidationError, validate_company_identity
 from src.utils.cache import CACHE_DIR, clear_cache, disk_cache
 
 
@@ -160,6 +162,30 @@ class TestCache:
 
 
 # ---------------------------------------------------------------------------
+# Company Validation Tests
+# ---------------------------------------------------------------------------
+
+class TestCompanyValidation:
+    def test_validates_known_company_and_ticker(self):
+        identity = validate_company_identity("Apple Inc", "AAPL")
+        assert identity.company_name == "Apple Inc"
+        assert identity.ticker == "AAPL"
+
+    def test_validates_common_alias_without_ticker(self):
+        identity = validate_company_identity("Google")
+        assert identity.company_name == "Alphabet"
+        assert identity.ticker == "GOOGL"
+
+    def test_rejects_gibberish_company_name(self):
+        with pytest.raises(CompanyValidationError):
+            validate_company_identity("xqzvprtmnzz")
+
+    def test_rejects_mismatched_company_and_ticker(self):
+        with pytest.raises(CompanyValidationError):
+            validate_company_identity("Definitely Not Apple", "AAPL")
+
+
+# ---------------------------------------------------------------------------
 # EDGAR Tests
 # ---------------------------------------------------------------------------
 
@@ -181,6 +207,12 @@ class TestEdgar:
         responses.add(responses.GET, EDGAR_COMPANY_TICKERS_URL, json=MOCK_TICKERS, status=200)
         cik = lookup_cik("ZZZZ")
         assert cik is None
+
+    @responses.activate
+    def test_lookup_company_title(self):
+        responses.add(responses.GET, EDGAR_COMPANY_TICKERS_URL, json=MOCK_TICKERS, status=200)
+        title = lookup_company_title("MSFT")
+        assert title == "Microsoft Corporation"
 
     @responses.activate
     def test_get_filings(self):
