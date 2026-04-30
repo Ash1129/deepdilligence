@@ -79,7 +79,7 @@ function Index() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={() => navigate({ to: "/analyze" })}
-              className="group inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary-hover"
+              className="group inline-flex items-center gap-2 rounded-md bg-[oklch(0.55_0.15_55)] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-[oklch(0.62_0.17_58)]"
             >
               Analyse a Company
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />

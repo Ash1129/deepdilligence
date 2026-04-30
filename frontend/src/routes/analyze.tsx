@@ -19,7 +19,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import heroSkyscraper from "@/assets/hero-skyscraper.jpg";
+import heroAnalyze from "@/assets/hero-analyze.avif";
 
 const searchSchema = z.object({
   company: z.string().optional(),
@@ -121,12 +121,12 @@ function AnalyzePage() {
       >
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroSkyscraper})` }}
+          style={{ backgroundImage: `url(${heroAnalyze})` }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,_oklch(0.25_0.05_60_/_0.15)_0%,_oklch(0.22_0.06_55_/_0.35)_45%,_oklch(0.20_0.05_50_/_0.85)_75%,_var(--background)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,_oklch(0.22_0.04_55_/_0.18)_0%,_oklch(0.22_0.06_55_/_0.35)_45%,_oklch(0.20_0.05_50_/_0.85)_75%,_var(--background)_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.78_0.14_70_/_0.18),_transparent_60%)]" />
       </div>
-      <Header />
+      <Header subtle />
       <main className="relative z-10 mx-auto max-w-7xl px-6 py-8">
         <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
           {/* Sidebar */}
