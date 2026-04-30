@@ -183,10 +183,11 @@ export async function streamSSE(
 
 // ── Display helpers ──────────────────────────────────────────────────────
 export const AGENT_META: Record<string, { label: string; icon: string }> = {
-  financial_analyst: { label: "Financial Analyst", icon: "💰" },
-  team_culture: { label: "Team & Culture", icon: "👥" },
-  market_competitive: { label: "Market & Competitive", icon: "📊" },
-  risk_sentiment: { label: "Risk & Sentiment", icon: "⚠️" },
+  financial_analyst:      { label: "Financial Analyst",       icon: "💰" },
+  team_culture:           { label: "Team & Culture",          icon: "👥" },
+  market_competitive:     { label: "Market & Competitive",    icon: "📊" },
+  risk_sentiment:         { label: "Risk & Sentiment",        icon: "⚠️" },
+  quantitative_momentum:  { label: "Quant Momentum",          icon: "🤖" },
 };
 
 export function confTier(c: number): "high" | "mid" | "low" {

@@ -9,6 +9,7 @@ from typing import Any
 
 from src.agents.financial import FinancialAgent
 from src.agents.market import MarketAgent
+from src.agents.quantitative import QuantitativeAgent
 from src.agents.risk import RiskAgent
 from src.agents.synthesis import SynthesisAgent
 from src.agents.team import TeamAgent
@@ -85,7 +86,7 @@ class Orchestrator:
         self.ticker = identity.ticker
         self._synthesis = SynthesisAgent(self.company_name)
 
-        logger.info("Orchestrator starting for %s (ticker=%s)", self.company_name, self.ticker)
+        logger.info("Orchestrator starting for %s (ticker=%s) — 5-agent pipeline", self.company_name, self.ticker)
 
         sub_reports = self._run_specialists_parallel()
 
@@ -129,11 +130,12 @@ class Orchestrator:
             TeamAgent(self.company_name, self.ticker),
             MarketAgent(self.company_name, self.ticker),
             RiskAgent(self.company_name, self.ticker),
+            QuantitativeAgent(self.company_name, self.ticker),
         ]
 
         results: dict[str, AgentSubReport] = {}
 
-        with ThreadPoolExecutor(max_workers=4, thread_name_prefix="agent") as pool:
+        with ThreadPoolExecutor(max_workers=5, thread_name_prefix="agent") as pool:
             future_to_agent = {
                 pool.submit(self._run_one_agent, agent): agent for agent in agents
             }
@@ -161,7 +163,7 @@ class Orchestrator:
                     self._on_agent_complete(agent.agent_name, error_report)
 
         # Return in canonical order for consistent memo section ordering
-        ordered = ["financial_analyst", "team_culture", "market_competitive", "risk_sentiment"]
+        ordered = ["financial_analyst", "team_culture", "market_competitive", "risk_sentiment", "quantitative_momentum"]
         return [results[name] for name in ordered if name in results]
 
     def _run_one_agent(self, agent: Any) -> AgentSubReport:

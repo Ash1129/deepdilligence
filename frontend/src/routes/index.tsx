@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
-import { ArrowRight, BarChart3, DollarSign, Users, AlertTriangle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import heroSkyscraper from "@/assets/hero-skyscraper.jpg";
 
 export const Route = createFileRoute("/")({
@@ -18,28 +18,29 @@ const QUICK_PICKS = [
 
 const AGENTS = [
   {
-    icon: <DollarSign className="h-5 w-5" />,
     emoji: "💰",
     title: "Financial",
     desc: "10-K filings, margins, cash flow & growth signals.",
   },
   {
-    icon: <Users className="h-5 w-5" />,
     emoji: "👥",
     title: "Team & Culture",
     desc: "Leadership, hiring velocity, glassdoor & retention.",
   },
   {
-    icon: <BarChart3 className="h-5 w-5" />,
     emoji: "📊",
     title: "Market",
     desc: "TAM, competitive moat & industry positioning.",
   },
   {
-    icon: <AlertTriangle className="h-5 w-5" />,
     emoji: "⚠️",
     title: "Risk",
     desc: "Sentiment, regulatory exposure & tail risks.",
+  },
+  {
+    emoji: "🤖",
+    title: "Quant Momentum",
+    desc: "Random Forest ML signal on 3 years of price & volume data.",
   },
 ];
 
@@ -119,18 +120,14 @@ function Index() {
         </section>
 
         {/* Agents */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {AGENTS.map((a) => (
             <div
               key={a.title}
-              className="group rounded-xl border border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] p-5 backdrop-blur-sm transition hover:border-primary/40 hover:bg-[oklch(0.26_0.05_55_/_0.7)]"
+              className="group rounded-xl border border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] p-5 backdrop-blur-sm transition hover:border-white/20 hover:bg-[oklch(0.26_0.05_55_/_0.7)]"
             >
-              <div className="mb-3 flex items-center gap-2 text-2xl">
-                <span>{a.emoji}</span>
-              </div>
-              <h3 className="text-base font-semibold text-white">
-                {a.title}
-              </h3>
+              <div className="mb-3 text-2xl">{a.emoji}</div>
+              <h3 className="text-base font-semibold text-white">{a.title}</h3>
               <p className="mt-1 text-sm text-white/75">{a.desc}</p>
             </div>
           ))}
