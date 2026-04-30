@@ -18,6 +18,11 @@ from src.evaluation.faithfulness import (
     faithfulness_report_text,
     score_faithfulness,
 )
+from src.evaluation.claim_verification import (
+    VerificationResult,
+    verification_report_text,
+    verify_memo_claims,
+)
 from src.evaluation.metrics import EvalResult, _check_coverage, _memo_text, compute_metrics
 from src.models.schemas import (
     AgentClaim,
@@ -32,12 +37,12 @@ from src.models.schemas import (
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
-def _make_source(id: str = "s1") -> Source:
+def _make_source(id: str = "s1", title: str | None = None, snippet: str = "Relevant excerpt.") -> Source:
     return Source(
         id=id,
         url=f"https://example.com/{id}",
-        title=f"Source {id}",
-        snippet="Relevant excerpt.",
+        title=title or f"Source {id}",
+        snippet=snippet,
         source_type=SourceType.NEWS_ARTICLE,
     )
 
@@ -181,6 +186,70 @@ class TestFaithfulness:
         assert "Per-Section" in text
 
 
+# ─── Claim verification tests ─────────────────────────────────────────────────
+
+class TestClaimVerification:
+    def _memo_with_registry(self, claim: AgentClaim) -> InvestmentMemo:
+        section = _make_section("Financials", claims=[claim])
+        return _make_memo(
+            sections=[section],
+            metadata={
+                "total_findings": 1,
+                "total_sources": 1,
+                "source_registry": {
+                    "financial_analyst::s1": {
+                        "id": "financial_analyst::s1",
+                        "original_id": "s1",
+                        "originating_agent": "financial_analyst",
+                        "url": "https://example.com/s1",
+                        "title": "Q4 revenue update",
+                        "snippet": "Revenue grew 20% year over year as enterprise demand improved.",
+                        "source_type": "news_article",
+                    }
+                },
+            },
+        )
+
+    def test_supported_claim_when_evidence_matches(self):
+        memo = self._memo_with_registry(
+            _make_claim("Revenue grew 20% year over year", ["financial_analyst::s1"])
+        )
+        result = verify_memo_claims(memo)
+        assert isinstance(result, VerificationResult)
+        assert result.supported_claims == 1
+        assert result.overall_score == 1.0
+        assert result.per_claim[0].status == "supported"
+
+    def test_numeric_mismatch_is_flagged_as_weak(self):
+        memo = self._memo_with_registry(
+            _make_claim("Revenue grew 90% year over year", ["financial_analyst::s1"])
+        )
+        result = verify_memo_claims(memo)
+        assert result.weak_claims == 1
+        assert result.per_claim[0].missing_numbers == ["90%"]
+        assert result.hallucination_risk == 0.5
+
+    def test_missing_source_is_flagged(self):
+        memo = self._memo_with_registry(_make_claim("Revenue grew 20%", []))
+        result = verify_memo_claims(memo)
+        assert result.missing_source_claims == 1
+        assert result.overall_score == 0.0
+
+    def test_unresolved_source_is_flagged(self):
+        memo = self._memo_with_registry(_make_claim("Revenue grew 20%", ["missing::s9"]))
+        result = verify_memo_claims(memo)
+        assert result.unresolved_source_claims == 1
+        assert result.per_claim[0].status == "unresolved_source"
+
+    def test_report_text_renders_flagged_claims(self):
+        memo = self._memo_with_registry(
+            _make_claim("Customer churn reached 75%", ["financial_analyst::s1"])
+        )
+        text = verification_report_text(verify_memo_claims(memo))
+        assert "Claim Verification Report" in text
+        assert "Claims Needing Review" in text
+
+
 # ─── Metrics / coverage tests ─────────────────────────────────────────────────
 
 class TestMetrics:
@@ -322,6 +391,8 @@ class TestSynthesisBuildMemo:
         assert memo.overall_confidence == 0.78
         assert memo.metadata["investment_highlights"] == ["Strong growth"]
         assert "source_registry" in memo.metadata
+        assert "verification" in memo.metadata
+        assert memo.metadata["verification"]["total_claims"] == 1
         assert "financial_analyst::s1" in memo.metadata["source_registry"]
         assert memo.sections[0].claims[0].source_ids == ["financial_analyst::s1"]
 

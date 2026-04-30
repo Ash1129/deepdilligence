@@ -57,6 +57,33 @@ export interface InvestmentMemo {
         retrieved_at?: string;
       }
     >;
+    verification?: {
+      company_name: string;
+      total_claims: number;
+      supported_claims: number;
+      weak_claims: number;
+      unsupported_claims: number;
+      missing_source_claims: number;
+      unresolved_source_claims: number;
+      overall_score: number;
+      hallucination_risk: number;
+      grade: string;
+      per_claim: Array<{
+        section_title: string;
+        claim_text: string;
+        source_ids: string[];
+        status:
+          | "supported"
+          | "weak"
+          | "unsupported"
+          | "missing_source"
+          | "unresolved_source";
+        support_score: number;
+        matched_terms: string[];
+        missing_numbers: string[];
+        reason: string;
+      }>;
+    };
   };
 }
 

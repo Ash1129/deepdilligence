@@ -5,11 +5,11 @@ import logging
 from datetime import datetime
 from typing import Any
 
-import json
 import re
 
 from openai import OpenAI
 
+from src.evaluation.claim_verification import verify_memo_claims
 from src.models.prompts import PRODUCE_MEMO_TOOL, SYNTHESIS_SYSTEM
 from src.models.schemas import (
     AgentClaim,
@@ -267,7 +267,7 @@ class SynthesisAgent:
             **extra_metadata,
         }
 
-        return InvestmentMemo(
+        memo = InvestmentMemo(
             company_name=self.company_name,
             generated_at=datetime.utcnow(),
             executive_summary=str(tool_input.get("executive_summary", "")),
@@ -277,6 +277,8 @@ class SynthesisAgent:
             ),
             metadata=metadata,
         )
+        memo.metadata["verification"] = verify_memo_claims(memo).to_dict()
+        return memo
 
     def _build_source_registry(
         self,

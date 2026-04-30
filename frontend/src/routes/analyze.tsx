@@ -515,6 +515,13 @@ function StatsTab({ memo }: { memo: InvestmentMemo }) {
   const allClaims = memo.sections.flatMap((s) => s.claims);
   const sourced = allClaims.filter((c) => c.source_ids.length > 0).length;
   const faithfulness = allClaims.length ? sourced / allClaims.length : 0;
+  const verification = m.verification;
+  const flaggedClaims = verification
+    ? verification.weak_claims +
+      verification.unsupported_claims +
+      verification.missing_source_claims +
+      verification.unresolved_source_claims
+    : 0;
   const cards = [
     { label: "Findings", value: m.total_findings },
     { label: "Sources", value: m.total_sources },
@@ -565,17 +572,57 @@ function StatsTab({ memo }: { memo: InvestmentMemo }) {
           })}
         </div>
       </div>
-      <div className="rounded-lg border border-white/10 bg-[oklch(0.20_0.03_55_/_0.65)] p-5">
-        <div className="text-xs uppercase tracking-wider text-white/70">
-          Faithfulness
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="rounded-lg border border-white/10 bg-[oklch(0.20_0.03_55_/_0.65)] p-5">
+          <div className="text-xs uppercase tracking-wider text-white/70">
+            Faithfulness
+          </div>
+          <div className="tnum mt-1 text-3xl font-bold">
+            {Math.round(faithfulness * 100)}%
+          </div>
+          <div className="text-xs text-white/60">
+            {sourced} of {allClaims.length} claims have sources
+          </div>
         </div>
-        <div className="tnum mt-1 text-3xl font-bold">
-          {Math.round(faithfulness * 100)}%
-        </div>
-        <div className="text-xs text-white/60">
-          {sourced} of {allClaims.length} claims have sources
+        <div className="rounded-lg border border-white/10 bg-[oklch(0.20_0.03_55_/_0.65)] p-5">
+          <div className="text-xs uppercase tracking-wider text-white/70">
+            Verification
+          </div>
+          <div className="tnum mt-1 text-3xl font-bold">
+            {verification ? `${Math.round(verification.overall_score * 100)}%` : "—"}
+          </div>
+          <div className="text-xs text-white/60">
+            {verification
+              ? `${verification.supported_claims}/${verification.total_claims} supported · ${flaggedClaims} need review`
+              : "Run a fresh memo to score source support"}
+          </div>
         </div>
       </div>
+      {verification && flaggedClaims > 0 && (
+        <div className="rounded-lg border border-white/10 bg-[oklch(0.20_0.03_55_/_0.65)] p-5">
+          <h4 className="mb-3 text-sm font-semibold">Claims needing review</h4>
+          <div className="space-y-2">
+            {verification.per_claim
+              .filter((c) => c.status !== "supported")
+              .slice(0, 8)
+              .map((claim, index) => (
+                <div
+                  key={`${claim.claim_text}-${index}`}
+                  className="rounded-md border border-white/10 bg-[oklch(0.18_0.02_55_/_0.75)] p-3 text-sm"
+                >
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
+                    <span className="rounded border border-white/10 px-2 py-0.5 uppercase">
+                      {claim.status.replace("_", " ")}
+                    </span>
+                    <span>{claim.section_title}</span>
+                  </div>
+                  <p className="mt-2 text-white/80">{claim.claim_text}</p>
+                  <p className="mt-1 text-xs text-white/50">{claim.reason}</p>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

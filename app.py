@@ -31,6 +31,7 @@ st.set_page_config(
 )
 
 from src.evaluation.benchmark import get_benchmark_names, load_benchmark
+from src.evaluation.claim_verification import verify_memo_claims
 from src.evaluation.faithfulness import score_faithfulness
 from src.evaluation.metrics import compute_metrics, metrics_report_text
 from src.models.schemas import AgentSubReport, InvestmentMemo
@@ -237,6 +238,38 @@ def _render_memo(memo: InvestmentMemo) -> None:
             f"— {faith.sourced_claims}/{faith.total_claims} claims have at least one source",
             unsafe_allow_html=True,
         )
+
+        st.markdown("### Claim verification")
+        verification = meta.get("verification") or verify_memo_claims(memo).to_dict()
+        vc = _conf_color(float(verification.get("overall_score", 0.0)))
+        flagged_count = (
+            int(verification.get("weak_claims", 0))
+            + int(verification.get("unsupported_claims", 0))
+            + int(verification.get("missing_source_claims", 0))
+            + int(verification.get("unresolved_source_claims", 0))
+        )
+        st.markdown(
+            f"**Verification:** <span style='color:{vc};font-weight:bold'>"
+            f"{float(verification.get('overall_score', 0.0)):.0%} "
+            f"[{verification.get('grade', 'Not scored')}]</span> "
+            f"— {verification.get('supported_claims', 0)}/{verification.get('total_claims', 0)} "
+            f"claims strongly supported, {flagged_count} need review",
+            unsafe_allow_html=True,
+        )
+        flagged_claims = [
+            c for c in verification.get("per_claim", [])
+            if c.get("status") in {"weak", "unsupported", "missing_source", "unresolved_source"}
+        ]
+        if flagged_claims:
+            with st.expander(f"Review flagged claims ({len(flagged_claims)})"):
+                for item in flagged_claims[:10]:
+                    st.markdown(
+                        f"- **{item.get('status', 'flagged')}** "
+                        f"({item.get('section_title', 'Unknown section')}): "
+                        f"{item.get('claim_text', '')}"
+                    )
+                    if item.get("reason"):
+                        st.caption(item["reason"])
 
     # Export tab
     with tabs[-1]:
