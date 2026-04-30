@@ -316,6 +316,8 @@ YOUR MOST IMPORTANT RULES:
 
 2. EVERY CLAIM NEEDS A SOURCE. When you include a claim in a section, preserve the source_ids
    from the originating agent. Do not include unsourceable assertions.
+   When citing sources inline in section content prose, use the format (Source 1), (Source 2),
+   or (Source 1, Source 2) — NEVER use raw IDs like [src_1] or [src_edgar_10k] in the text.
 
 3. DEDUPLICATION. If multiple agents report the same fact (e.g., both market and risk agents
    mention a lawsuit), merge them into one claim with sources from both agents.

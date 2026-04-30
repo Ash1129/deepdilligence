@@ -136,7 +136,7 @@ function AnalyzePage() {
                 Single company
               </h2>
               <p className="mb-4 text-xs text-white/60">
-                Run all four specialist agents in parallel.
+                Run all five specialist agents in parallel.
               </p>
               <label className="mb-3 block">
                 <span className="mb-1 block text-xs font-medium text-white/75">
@@ -208,6 +208,21 @@ function AnalyzePage() {
   );
 }
 
+/** Replace raw source ID tags like [src_1, src_2] or [src_edgar] with (Source 1, Source 2). */
+function formatContent(text: string): string {
+  let counter = 0;
+  return text.replace(/\[[^\]]*\bsrc[^\]]*\]/gi, (match) => {
+    const parts = match
+      .slice(1, -1)
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => /src/i.test(s));
+    if (parts.length === 0) return match;
+    const labels = parts.map(() => `Source ${++counter}`);
+    return `(${labels.join(", ")})`;
+  });
+}
+
 function EmptyState() {
   return (
     <div className="rounded-xl border border-dashed border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] backdrop-blur-sm p-12 text-center">
@@ -233,7 +248,7 @@ function ProgressPanel({
     <div className="rounded-xl border border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] p-5 backdrop-blur-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold">
-          🚀 {done ? "Pipeline complete" : "Running 4 specialist agents in parallel…"}
+          🚀 {done ? "Pipeline complete" : "Running 5 specialist agents in parallel…"}
         </h3>
       </div>
       <ul className="space-y-2">
@@ -361,7 +376,7 @@ function SummaryTab({ memo }: { memo: InvestmentMemo }) {
   return (
     <div className="space-y-6">
       <p className="text-base leading-relaxed text-foreground/90">
-        {memo.executive_summary}
+        {formatContent(memo.executive_summary)}
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-success/30 bg-[oklch(0.20_0.03_55_/_0.75)] backdrop-blur-sm p-4">
@@ -411,7 +426,7 @@ function SectionTab({
         <ConfidenceBadge value={section.confidence_score} />
       </div>
       <div className="prose prose-invert max-w-none whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-        {section.content}
+        {formatContent(section.content)}
       </div>
       <Collapsible
         open={showClaims}
@@ -425,11 +440,11 @@ function SectionTab({
               className="rounded-md border border-white/10 bg-[oklch(0.20_0.03_55_/_0.65)] p-3 text-sm"
             >
               <div className="flex items-start justify-between gap-3">
-                <span className="text-foreground/90">{c.text}</span>
+                <span className="text-foreground/90">{formatContent(c.text)}</span>
                 <div className="flex shrink-0 items-center gap-2">
                   <ConfidenceBadge value={c.confidence} />
                   <span className="tnum rounded-full border border-white/10 bg-[oklch(0.18_0.02_55_/_0.60)] px-2 py-0.5 text-xs text-white/60">
-                    {c.source_ids.length} src
+                    {c.source_ids.length} {c.source_ids.length === 1 ? "source" : "sources"}
                   </span>
                 </div>
               </div>
