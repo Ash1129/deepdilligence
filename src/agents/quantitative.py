@@ -17,9 +17,11 @@ returns a graceful zero-confidence stub (same pattern as other agents on failure
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from openai import OpenAI
@@ -28,7 +30,7 @@ from src.agents.base_agent import BaseAgent
 from src.data.price_history import fetch_price_history, run_ml_prediction
 from src.models.prompts import PRODUCE_ANALYSIS_TOOL, QUANT_ANALYZE_SYSTEM
 from src.models.schemas import AgentClaim, AgentSubReport, Source, SourceType
-from src.utils.config import AGENT_MODEL, get_openai_api_key
+from src.utils.config import AGENT_MODEL, CACHE_DIR, get_openai_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +73,32 @@ class QuantitativeAgent(BaseAgent):
 
     # ─── Data gathering (deterministic) ──────────────────────────────────────
 
+    # ─── Disk cache (mirrors ReactAgent pattern) ─────────────────────────────
+
+    def _cache_path(self) -> Path:
+        raw = f"{self.agent_name}|{self.company_name}|{self.ticker or ''}"
+        key = hashlib.sha256(raw.encode()).hexdigest()[:16]
+        cache_dir = CACHE_DIR / "agents" / self.agent_name
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir / f"{key}_report.json"
+
+    def run(self) -> AgentSubReport:
+        """Run with disk caching — same pattern as ReactAgent.run()."""
+        path = self._cache_path()
+        if path.exists():
+            self.logger.info("Cache hit — loading quantitative report from %s", path.name)
+            with open(path) as f:
+                return AgentSubReport.model_validate(json.load(f))
+
+        report = super().run()
+
+        with open(path, "w") as f:
+            json.dump(report.model_dump(mode="json"), f, indent=2)
+        self.logger.info("Cached quantitative report → %s", path.name)
+        return report
+
+    # ─── Data gathering (deterministic) ──────────────────────────────────────
+
     def gather_data(self) -> dict[str, Any]:
         """Download price history and run the ML prediction pipeline.
 
@@ -91,14 +119,24 @@ class QuantitativeAgent(BaseAgent):
                 ),
             }
 
-        self.logger.info("Fetching price history for %s", self.ticker)
-        df = fetch_price_history(self.ticker, years=3)
+        # Retry up to 3 times — yfinance can fail transiently on first call
+        df = None
+        for attempt in range(3):
+            self.logger.info(
+                "Fetching price history for %s (attempt %d/3)", self.ticker, attempt + 1
+            )
+            df = fetch_price_history(self.ticker, years=3)
+            if df is not None:
+                break
+            if attempt < 2:
+                import time
+                time.sleep(1.5)
 
         if df is None:
             return {
                 "error": "insufficient_data",
                 "message": (
-                    f"Insufficient price history retrieved for {self.ticker}. "
+                    f"Insufficient price history retrieved for {self.ticker} after 3 attempts. "
                     "The ticker may be unlisted, too recently listed, or delisted."
                 ),
             }
