@@ -32,6 +32,13 @@ export function Header({ subtle = false }: { subtle?: boolean }) {
           >
             Weekly Rankings
           </Link>
+          <Link
+            to="/portfolio"
+            className="rounded-md px-3 py-1.5 text-white/80 drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)] hover:bg-white/10 hover:text-white"
+            activeProps={{ className: "rounded-md px-3 py-1.5 bg-white/10 text-white" }}
+          >
+            Portfolio
+          </Link>
         </nav>
       </div>
     </header>

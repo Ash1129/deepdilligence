@@ -182,6 +182,55 @@ export async function streamSSE(
 }
 
 // ── Display helpers ──────────────────────────────────────────────────────
+// ── Portfolio types ───────────────────────────────────────────────────────
+export interface PortfolioHolding {
+  ticker: string;
+  company: string;
+  sector: string;
+  rating: string;
+  rank: number;
+  confidence: number;
+  weight_pct: number;
+  dollar_amount: number;
+  shares: number;
+  current_price: number;
+  bull_case: string;
+  bear_case: string;
+  rationale: string;
+}
+
+export interface SP500Metrics {
+  name: string;
+  latest_close: number;
+  return_1w: number | null;
+  return_1m: number | null;
+  return_3m: number | null;
+  return_ytd: number | null;
+}
+
+export interface Portfolio {
+  generated_at: string;
+  week_of: string;
+  investment_amount: number;
+  total_invested: number;
+  cash_remainder: number;
+  num_holdings: number;
+  avg_confidence: number;
+  strong_buy_count: number;
+  holdings: PortfolioHolding[];
+  sector_breakdown: Record<string, number>;
+  sp500: SP500Metrics;
+  macro_commentary: string;
+  universe_size: number;
+}
+
+export interface PortfolioRequest {
+  amount: number;
+  max_positions: number;
+  max_position_pct: number;
+  strong_buy_only: boolean;
+}
+
 export const AGENT_META: Record<string, { label: string; icon: string }> = {
   financial_analyst:      { label: "Financial Analyst",       icon: "💰" },
   team_culture:           { label: "Team & Culture",          icon: "👥" },

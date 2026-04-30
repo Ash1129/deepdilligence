@@ -30,6 +30,7 @@ from pydantic import BaseModel
 
 from src.models.schemas import AgentSubReport
 from src.orchestrator import Orchestrator
+from src.scheduler.portfolio_builder import build_portfolio
 from src.scheduler.batch_runner import _run_one
 from src.scheduler.recommender import (
     RecommendationEngine,
@@ -68,6 +69,13 @@ class WeeklyReportRequest(BaseModel):
     top_n: int = 10
     use_screener: bool = False
     screener_criteria: str = "Price Change"
+
+
+class PortfolioRequest(BaseModel):
+    amount: float
+    max_positions: int = 10
+    max_position_pct: float = 30.0
+    strong_buy_only: bool = False
 
 
 # ─── SSE helper ───────────────────────────────────────────────────────────────
@@ -166,6 +174,31 @@ def analyze_company(req: AnalyzeRequest) -> StreamingResponse:
             yield msg
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/api/portfolio/build")
+def build_portfolio_endpoint(req: PortfolioRequest) -> dict:
+    """Build a portfolio allocation from the latest weekly report.
+
+    Uses BUY / STRONG BUY rated stocks, weighs by confidence and suggested
+    allocation, fetches live prices, and returns holdings with S&P 500 benchmark.
+    """
+    if req.amount <= 0:
+        raise HTTPException(status_code=400, detail="Investment amount must be positive.")
+    if not (1 <= req.max_positions <= 20):
+        raise HTTPException(status_code=400, detail="max_positions must be between 1 and 20.")
+
+    result = build_portfolio(
+        amount=req.amount,
+        max_positions=req.max_positions,
+        max_position_pct=req.max_position_pct,
+        strong_buy_only=req.strong_buy_only,
+    )
+
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["message"])
+
+    return result
 
 
 @app.post("/api/weekly-report/generate")
