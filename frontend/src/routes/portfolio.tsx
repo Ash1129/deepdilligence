@@ -15,7 +15,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import heroPortfolio from "@/assets/hero-portfolio.avif";
+import heroPortfolio from "@/assets/hero-portfolio.jpg";
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioPage,
