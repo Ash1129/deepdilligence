@@ -67,7 +67,7 @@ function Index() {
         <section className="relative pt-20 pb-16 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs text-foreground/80 backdrop-blur">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
-            Multi-agent equity research, live
+            Multi-agent equity research
           </div>
           <h1 className="text-balance text-5xl font-bold tracking-tight text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.65)] sm:text-6xl">
             AI-Powered Investment
@@ -133,7 +133,6 @@ function Index() {
               key={a.title}
               className="group rounded-xl border border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] p-5 backdrop-blur-sm transition hover:border-white/20 hover:bg-[oklch(0.26_0.05_55_/_0.7)] text-center"
             >
-              <div className="mb-3 text-2xl">{a.emoji}</div>
               <h3 className="text-base font-semibold text-white">{a.title}</h3>
               <p className="mt-1 text-sm text-white/75">{a.desc}</p>
             </div>
