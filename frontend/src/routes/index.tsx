@@ -37,7 +37,7 @@ function Index() {
       <Header />
       <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24">
         {/* Hero */}
-        <section className="relative pt-20 pb-16 text-center">
+        <section className="relative pt-36 pb-16 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-xs text-foreground/80 backdrop-blur">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
             Multi-agent equity research
