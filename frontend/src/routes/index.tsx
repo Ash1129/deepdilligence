@@ -46,9 +46,6 @@ function Index() {
             AI-Powered Investment
             <br /> Due Diligence
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-white/85 drop-shadow-[0_1px_10px_rgba(0,0,0,0.6)]">
-            Four specialist agents. One investment memo. Weekly rankings.
-          </p>
 
           <div className="mt-24 flex flex-wrap items-center justify-center gap-3">
             <Link
