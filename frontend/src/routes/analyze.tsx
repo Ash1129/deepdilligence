@@ -223,14 +223,36 @@ function formatContent(text: string): string {
   });
 }
 
+const AGENTS = [
+  { emoji: "💰", title: "Financial",       desc: "10-K filings, margins, cash flow & growth signals." },
+  { emoji: "👥", title: "Team & Culture",  desc: "Leadership, hiring velocity, glassdoor & retention." },
+  { emoji: "📊", title: "Market",          desc: "TAM, competitive moat & industry positioning." },
+  { emoji: "⚠️", title: "Risk",            desc: "Sentiment, regulatory exposure & tail risks." },
+  { emoji: "🤖", title: "Quant Momentum", desc: "Random Forest ML signal on 3 years of price & volume data." },
+];
+
 function EmptyState() {
   return (
-    <div className="rounded-xl border border-dashed border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] backdrop-blur-sm p-12 text-center">
-      <Sparkles className="mx-auto mb-3 h-8 w-8 text-[oklch(0.78_0.14_70)]" />
-      <h3 className="text-lg font-semibold">Ready to analyse</h3>
-      <p className="mt-1 text-sm text-white/60">
-        Enter a company on the left and run the four specialist agents.
-      </p>
+    <div className="space-y-6">
+      <div className="rounded-xl border border-dashed border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] backdrop-blur-sm p-10 text-center">
+        <Sparkles className="mx-auto mb-3 h-8 w-8 text-[oklch(0.78_0.14_70)]" />
+        <h3 className="text-lg font-semibold">Ready to analyse</h3>
+        <p className="mt-1 text-sm text-white/60">
+          Enter a company on the left and run five specialist agents in parallel.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-5">
+        {AGENTS.map((a) => (
+          <div
+            key={a.title}
+            className="rounded-xl border border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] p-4 text-center backdrop-blur-sm"
+          >
+            <div className="mb-2 text-2xl">{a.emoji}</div>
+            <h3 className="text-sm font-semibold text-white">{a.title}</h3>
+            <p className="mt-1 text-xs text-white/60">{a.desc}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

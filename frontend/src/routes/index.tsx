@@ -16,33 +16,6 @@ const QUICK_PICKS = [
   { company: "Amazon", ticker: "AMZN" },
 ];
 
-const AGENTS = [
-  {
-    emoji: "💰",
-    title: "Financial",
-    desc: "10-K filings, margins, cash flow & growth signals.",
-  },
-  {
-    emoji: "👥",
-    title: "Team & Culture",
-    desc: "Leadership, hiring velocity, glassdoor & retention.",
-  },
-  {
-    emoji: "📊",
-    title: "Market",
-    desc: "TAM, competitive moat & industry positioning.",
-  },
-  {
-    emoji: "⚠️",
-    title: "Risk",
-    desc: "Sentiment, regulatory exposure & tail risks.",
-  },
-  {
-    emoji: "🤖",
-    title: "Quant Momentum",
-    desc: "Random Forest ML signal on 3 years of price & volume data.",
-  },
-];
 
 function Index() {
   const navigate = useNavigate();
@@ -126,18 +99,6 @@ function Index() {
           </div>
         </section>
 
-        {/* Agents */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {AGENTS.map((a) => (
-            <div
-              key={a.title}
-              className="group rounded-xl border border-white/10 bg-[oklch(0.22_0.04_55_/_0.55)] p-5 backdrop-blur-sm transition hover:border-white/20 hover:bg-[oklch(0.26_0.05_55_/_0.7)] text-center"
-            >
-              <h3 className="text-base font-semibold text-white">{a.title}</h3>
-              <p className="mt-1 text-sm text-white/75">{a.desc}</p>
-            </div>
-          ))}
-        </section>
       </main>
     </div>
   );
