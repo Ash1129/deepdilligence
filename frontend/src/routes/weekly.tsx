@@ -158,8 +158,8 @@ function WeeklyPage() {
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroWeekly})` }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,_oklch(0.25_0.05_60_/_0.15)_0%,_oklch(0.22_0.06_55_/_0.35)_45%,_oklch(0.20_0.05_50_/_0.85)_75%,_var(--background)_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.78_0.14_70_/_0.18),_transparent_60%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,_oklch(0.22_0.06_55_/_0.55)_0%,_oklch(0.20_0.06_52_/_0.72)_45%,_oklch(0.18_0.05_50_/_0.92)_75%,_var(--background)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.65_0.14_58_/_0.35),_transparent_60%)]" />
       </div>
       <Header subtle />
       <main className="relative z-10 mx-auto max-w-7xl px-6 py-8">
