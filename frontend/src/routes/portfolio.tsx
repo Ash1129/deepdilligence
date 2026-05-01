@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ConfidenceBadge, RatingBadge } from "@/components/badges";
-import { getJSON, type Portfolio, type PortfolioHolding } from "@/lib/api";
+import { postJSON, type Portfolio, type PortfolioHolding } from "@/lib/api";
 import {
   Loader2,
   ChevronDown,
@@ -55,15 +55,11 @@ function PortfolioPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getJSON<Portfolio>("/api/portfolio/build", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: amt,
-          max_positions: maxPos,
-          max_position_pct: maxPosPct,
-          strong_buy_only: strongOnly,
-        }),
+      const data = await postJSON<Portfolio>("/api/portfolio/build", {
+        amount: amt,
+        max_positions: maxPos,
+        max_position_pct: maxPosPct,
+        strong_buy_only: strongOnly,
       });
       setPortfolio(data);
     } catch (e: unknown) {

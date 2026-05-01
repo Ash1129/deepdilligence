@@ -142,6 +142,16 @@ export async function getJSON<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function postJSON<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json() as Promise<T>;
+}
+
 // ── SSE streaming ────────────────────────────────────────────────────────
 export async function streamSSE(
   path: string,
