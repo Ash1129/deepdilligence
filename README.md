@@ -1,40 +1,139 @@
 # DeepDiligence
 
-DeepDiligence is a multi-agent investment due diligence system built for the Cornell ENMGT5400 final project. Given a public company, it runs four specialist AI agents in parallel, synthesizes their structured findings into a sourced investment memo, and generates weekly BUY/HOLD/SELL-ranked recommendations across a stock watchlist.
+Multi-agent AI system for investment due diligence. Give it a company — it runs five specialist agents in parallel, synthesizes their findings into a sourced investment memo, ranks stocks weekly, and builds portfolio allocations with live prices and S&P 500 benchmarking.
+
+Built for Cornell ENMGT5400 (Applications of AI for Engineering Managers), April 2026.
 
 ---
 
 ## What It Does
 
-- Runs four specialist agents concurrently: **Financial**, **Team & Culture**, **Market & Competitive**, **Risk & Sentiment**
-- Pulls live data from SEC EDGAR, NewsAPI, company websites, careers pages, and web scraping
-- Produces strict Pydantic-typed outputs — no free-form agent text leaks through
-- Every claim links to at least one source ID; unsourced claims are flagged, not silently included
-- Surfaces cross-agent contradictions explicitly rather than resolving them silently
-- Scores each memo with faithfulness (source traceability) and benchmark coverage metrics
-- Weekly workflow: screen S&P 500 top movers → run batch diligence → generate ranked report
+- **Analyse a company** — five specialist agents run concurrently and produce a six-section investment memo in ~2 minutes
+- **Weekly rankings** — screen a curated 95-stock universe, run batch diligence, generate BUY/HOLD/SELL ratings
+- **Portfolio builder** — allocate a dollar amount across AI-rated picks with live prices, confidence-weighted allocation, and S&P 500 benchmark comparison
 
 ---
 
 ## Architecture
 
-```text
-app.py
-  ├─ Single Company page
-  │   └─ Orchestrator  (ThreadPoolExecutor — 4 agents in parallel)
-  │       ├─ FinancialAgent    → SEC EDGAR, investor-relations pages
-  │       ├─ TeamAgent         → careers pages, leadership signals
-  │       ├─ MarketAgent       → competitors, positioning, news
-  │       ├─ RiskAgent         → litigation, regulatory, reputational risk
-  │       └─ SynthesisAgent    → InvestmentMemo (sourced claims, conflicts, confidence)
-  │
-  └─ Weekly Rankings page
-      ├─ build_watchlist()     → curated universe or live S&P 500 screener (yfinance)
-      ├─ batch_runner.py       → per-company memo pipeline with disk cache
-      └─ RecommendationEngine  → WeeklyReport (STRONG BUY → STRONG SELL)
+Router / Aggregator pattern. The orchestrator dispatches all five agents in parallel via `ThreadPoolExecutor`. Agents are fully isolated — they cannot communicate with each other. Synthesis runs only after all five complete.
+
+```
+User Request
+    └── Orchestrator (Router)
+            ├── Financial Analyst       → SEC 10-K/10-Q, margins, cash flow
+            ├── Team & Culture          → hiring velocity, leadership signals
+            ├── Market & Competitive    → TAM, moat, competitor mapping
+            ├── Risk & Sentiment        → news sentiment, litigation, macro exposure
+            └── Quant Momentum          → Random Forest ML on 3yr OHLCV + 14 indicators
+                        │
+                        ▼
+              Synthesis Agent (Aggregator)
+              reconcile · conflict detect · confidence score
+                        │
+                        ▼
+              Investment Memo (Pydantic)
+              6 sections · source IDs · per-claim traceability
 ```
 
-Streamlit runs the pipeline synchronously on the main thread via `st.status()`. Worker threads inside the orchestrator never call `st.*` — only main-thread callbacks do.
+See `DeepDiligence_Architecture.xml` for a draw.io diagram.
+
+---
+
+## The Five Agents
+
+| Agent | Data Sources | Output |
+|-------|-------------|--------|
+| **Financial Analyst** | SEC EDGAR (10-K, 10-Q), investor-relations pages | Revenue trends, margin signals, debt structure |
+| **Team & Culture** | Job postings, leadership announcements | Hiring velocity, org change signals |
+| **Market & Competitive** | News, competitor sites, industry reports | TAM estimate, moat assessment, positioning |
+| **Risk & Sentiment** | NewsAPI, regulatory filings, litigation data | Sentiment score, risk flags, tail risks |
+| **Quant Momentum** | yfinance (3yr OHLCV) | Random Forest prediction, 14 technical indicators, holdout accuracy |
+
+The **Synthesis Agent** receives only typed Pydantic sub-reports — never raw documents. Every claim in the memo carries at least one `source_id`. Unsourceable claims are flagged, not included.
+
+---
+
+## Portfolio Builder — Backtest
+
+$10,000 allocated using AI-rated picks from Jan 2024 to May 2026:
+
+| Stock | Rating | Jan '24 | Today | Return | P&L |
+|-------|--------|---------|-------|--------|-----|
+| ISRG | STRONG BUY | $330.98 | $457.61 | +38.3% | +$1,275 |
+| LLY | BUY | $583.03 | $934.60 | +60.3% | +$2,010 |
+| SHOP | BUY | $73.83 | $121.13 | +64.1% | +$2,136 |
+| **Portfolio** | | **$10,000** | **$15,421** | **+54.2%** | **+$5,421** |
+| S&P 500 | Benchmark | | | +52.0% | |
+
+**Alpha: +2.2 percentage points.** Portfolio weights are computed as `suggested_weight_pct × rating_boost × confidence`, capped per position and normalised. Live prices fetched via yfinance on every request.
+
+---
+
+## Tech Stack
+
+| Layer | Tech |
+|-------|------|
+| Backend | Python 3.11, FastAPI, uvicorn |
+| LLM | Anthropic Claude API (`claude-sonnet-4-20250514`) |
+| ML | scikit-learn RandomForestClassifier, numpy |
+| Market Data | yfinance |
+| Frontend | React, TypeScript, TanStack Router, Tailwind CSS |
+| Streaming | Server-Sent Events (SSE) — real-time agent progress |
+| Caching | Disk-based, SHA256-keyed JSON per agent |
+| Data Sources | SEC EDGAR, NewsAPI, web scraping (BeautifulSoup) |
+
+---
+
+## Setup
+
+Requires Python 3.11+ and Node 18+.
+
+**Backend**
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # fill in your keys
+```
+
+`.env` keys:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+NEWS_API_KEY=...
+SEC_EDGAR_USER_AGENT="DeepDiligence your-email@example.com"
+```
+
+SEC EDGAR requires a descriptive User-Agent with a contact email.
+
+**Frontend**
+
+```bash
+cd frontend
+npm install
+```
+
+---
+
+## Running
+
+```bash
+# Backend (from repo root)
+uvicorn api:app --port 8000
+
+# Frontend (from /frontend)
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173`. Backend at `http://localhost:8000`.
+
+The legacy Streamlit interface (`app.py`) still works if you prefer it:
+
+```bash
+streamlit run app.py
+```
 
 ---
 
@@ -42,160 +141,67 @@ Streamlit runs the pipeline synchronously on the main thread via `st.status()`. 
 
 | Path | Purpose |
 |------|---------|
-| `app.py` | Streamlit app — Single Company and Weekly Rankings pages |
-| `src/orchestrator.py` | Parallel specialist dispatch + synthesis coordination |
-| `src/agents/` | `financial.py`, `team.py`, `market.py`, `risk.py`, `synthesis.py` |
-| `src/data/` | SEC EDGAR, NewsAPI, web scraper, careers-page scraper |
+| `api.py` | FastAPI backend — REST + SSE endpoints |
+| `src/orchestrator.py` | Parallel agent dispatch + synthesis coordination |
+| `src/agents/financial.py` | Financial Analyst agent |
+| `src/agents/team.py` | Team & Culture agent |
+| `src/agents/market.py` | Market & Competitive agent |
+| `src/agents/risk.py` | Risk & Sentiment agent |
+| `src/agents/quantitative.py` | Quant Momentum agent (Random Forest ML) |
+| `src/agents/synthesis.py` | Synthesis + conflict detection + confidence scoring |
 | `src/models/schemas.py` | Pydantic v2 contracts for all inter-agent data |
-| `src/models/prompts.py` | All agent system prompts and tool definitions |
-| `src/scheduler/screener.py` | Curated universe filter + live S&P 500 screener |
-| `src/scheduler/batch_runner.py` | Batch memo runner with per-ticker disk cache |
-| `src/scheduler/recommender.py` | Portfolio-manager LLM → ranked `WeeklyReport` |
-| `src/evaluation/faithfulness.py` | Source-traceability scoring (A–F grade) |
-| `src/evaluation/metrics.py` | Benchmark fact/risk coverage + composite score |
+| `src/models/prompts.py` | All agent system prompts |
+| `src/scheduler/portfolio_builder.py` | Portfolio allocation + live pricing + S&P 500 benchmark |
+| `src/scheduler/recommender.py` | Weekly report generation + stock ranking |
+| `src/scheduler/screener.py` | 95-stock curated universe + live screener |
+| `src/data/price_history.py` | yfinance download + 14 technical indicator engineering |
 | `data/stock_universe.json` | 95 stocks tagged by sector and investment style |
-| `data/benchmarks/` | 10 benchmark company profiles for evaluation |
-| `run_weekly.py` | CLI for weekly batch runs |
-| `tests/` | 54 unit tests |
+| `frontend/src/routes/` | Page components: analyze, weekly, portfolio, index |
+| `DeepDiligence_Architecture.xml` | draw.io architecture diagram |
 
 ---
 
-## Setup
+## API Endpoints
 
-Requires Python 3.11 or 3.12.
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # then fill in your keys
-```
-
-`.env` keys required:
-
-```
-OPENAI_API_KEY=sk-...
-NEWS_API_KEY=...
-SEC_EDGAR_USER_AGENT="DeepDiligence your-email@example.com"
-```
-
-The SEC EDGAR API requires a descriptive User-Agent string with a contact email.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/universe` | Full 95-stock universe with styles and sectors |
+| GET | `/api/weekly-report` | Latest saved weekly report |
+| GET | `/api/weekly-report/all` | All historical reports |
+| POST | `/api/analyze` | SSE stream — full 5-agent pipeline for one company |
+| POST | `/api/weekly-report/generate` | SSE stream — batch pipeline + rankings |
+| POST | `/api/portfolio/build` | JSON — portfolio allocation from latest weekly report |
 
 ---
 
-## Run The App
+## Caching
 
-```bash
-streamlit run app.py
-```
-
-**Single Company** — enter a company name and optional ticker, click Run Analysis. The memo appears with tabbed sections (Executive Summary, Financial, Team, Market, Risk, Stats & Sources, Export).
-
-**Weekly Rankings** — choose investment styles, sectors, stock count, and whether to use the live S&P 500 screener or the curated universe. Click Generate Weekly Report.
-
----
-
-## Run From CLI
-
-```bash
-# Single company
-python3.11 run_pipeline.py
-
-# Weekly report — uses cached memos only (fast, no API calls)
-python3.11 run_weekly.py --dry-run
-
-# Weekly report — reruns all pipelines live
-python3.11 run_weekly.py --refresh
-```
-
----
-
-## Testing
-
-```bash
-python3.11 -m pytest -q
-```
-
-```
-54 passed in 1.2s
-```
-
-Tests cover: Pydantic schema validation, disk cache, SEC EDGAR client, NewsAPI client, web and careers-page scraping, agent report construction, synthesis memo building, faithfulness scoring, and benchmark coverage metrics.
-
----
-
-## Evaluation Results
-
-Scores across ten benchmarked companies (memos generated with `gpt-5.4-mini`):
-
-| Ticker | Company | Confidence | Faithfulness | Facts | Risks | Composite | Grade |
-|--------|---------|-----------|-------------|-------|-------|-----------|-------|
-| AAPL | Apple Inc | 78% | 100% A | 62% | 83% | 88% | **A** |
-| MSFT | Microsoft | 84% | 80% B | 100% | 100% | 87% | **A** |
-| JPM | JPMorgan Chase | 76% | 100% A | 75% | 67% | 83% | **B** |
-| CRM | Salesforce | 72% | 83% B | 88% | 67% | 79% | **B** |
-| NFLX | Netflix | 73% | 81% B | 88% | 50% | 76% | **B** |
-| NVDA | NVIDIA | 78% | — | 75% | 67% | 46% | D |
-| AMZN | Amazon | 74% | — | 50% | 83% | 44% | D |
-| META | Meta Platforms | 72% | — | 75% | 67% | 44% | D |
-| GOOGL | Alphabet | 76% | — | 75% | 67% | 43% | D |
-| TSLA | Tesla | 60% | — | 38% | 67% | 33% | F |
-
-- **Confidence**: overall memo confidence as assessed by the synthesis agent
-- **Faithfulness**: share of claims with ≥1 source ID linked (A = ≥90%)
-- **Facts / Risks**: keyword coverage against benchmark known-facts / known-risks lists
-- **Composite**: 40% fact coverage + 40% faithfulness + 20% confidence
-
-Lower faithfulness scores reflect runs where the synthesis agent did not carry source IDs through from specialist subreports — an identified improvement area.
-
----
-
-## Sample Weekly Report (2026-W18, 7 Technology stocks)
-
-```
-#1  NVDA  STRONG BUY   28%  — AI infrastructure leader, 62% YoY revenue growth
-#2  NOW   BUY          18%  — High-quality SaaS, durable enterprise moat
-#3  SNOW  BUY          15%  — Cloud data platform, strong net retention
-#4  TXN   HOLD          —   — Mature semiconductor, limited near-term catalyst
-#5  ORCL  HOLD          —   — Stable but evidence-constrained
-#6  AMD   SELL          —   — Competitive pressure, evidence gaps
-#7  PLTR  STRONG SELL   —   — Weak diligence packet, unverifiable traction claims
-```
-
----
-
-## Data and Caching
-
-All expensive calls are cached under `data/cache/`:
+All expensive calls cache under `data/cache/` (excluded from git):
 
 | Path | Contents |
 |------|---------|
-| `data/cache/agents/` | Per-agent structured subreports |
-| `data/cache/memos/` | Full synthesized memos per ticker |
+| `data/cache/agents/` | Per-agent Pydantic sub-reports (keyed by SHA256 of company + ticker) |
+| `data/cache/memos/` | Full synthesized memos |
 | `data/cache/news/` | NewsAPI responses |
 | `data/cache/edgar/` | SEC EDGAR API responses |
-| `data/cache/web/` | Scraped web pages |
-| `data/cache/jobs/` | Careers-page scrape results |
-
-Cache keys are SHA-256 hashes of `(agent_name, company, ticker)`. Cache files are excluded from git.
+| `data/cache/web/` | Scraped pages |
 
 ---
 
 ## Limitations
 
-- Private-company financial data is unavailable (no SEC EDGAR coverage)
-- Web scraping is best-effort and fails on JS-heavy or bot-blocking pages
-- NewsAPI free tier (100 req/day) requires aggressive caching; 429 errors appear in some memos
-- Cache keys do not include model version or prompt version
-- The recommendation engine is LLM-based — treat output as an analytical aid, not investment advice
+- Private companies have limited coverage — no SEC EDGAR filings
+- Quant agent requires a ticker and at least 120 days of public price history
+- NewsAPI free tier is 100 req/day — cached aggressively to stay within limits
+- Web scraping is best-effort; JS-heavy or bot-blocking pages may return partial data
+- Portfolio Builder requires a weekly report to exist — generate one first
 
 ---
 
-## Potential Improvements
+## What's Next
 
-- Add prompt and model versioning to cache keys
-- Embed a full source registry in exported `InvestmentMemo` JSON
-- Add PDF export using WeasyPrint
-- Add GitHub Actions CI with test and lint steps
-- Expand benchmark profiles; add semantic (embedding-based) coverage scoring
-- Add retry and backoff for NewsAPI, EDGAR, and OpenAI rate limits
+- RAG-based faithfulness verifier using ChromaDB (already in stack) to check claims against raw sources
+- Cross-week memory — track how a thesis evolves across weekly reports
+- Post-memo Q&A interface against the raw source corpus
+- Expand beyond 95 stocks
