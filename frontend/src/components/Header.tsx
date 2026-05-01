@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Activity } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 export function Header({ subtle = false }: { subtle?: boolean }) {
   return (
@@ -12,9 +12,7 @@ export function Header({ subtle = false }: { subtle?: boolean }) {
     >
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Activity className="h-4 w-4" />
-          </span>
+          <img src={logo} alt="DeepDiligence logo" className="h-7 w-7 invert" />
           <span>DeepDiligence</span>
         </Link>
         <nav className="flex items-center gap-1 text-sm">
