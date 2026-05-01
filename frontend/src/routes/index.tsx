@@ -48,13 +48,13 @@ function Index() {
           </h1>
 
           <div className="mt-24 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to="/portfolio"
+            <button
+              onClick={() => navigate({ to: "/analyze" })}
               className="group inline-flex items-center gap-2 rounded-md bg-[oklch(0.55_0.15_55)] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-[oklch(0.62_0.17_58)]"
             >
-              Portfolio Builder
+              Analyse a Company
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            </Link>
+            </button>
             <Link
               to="/weekly"
               className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-black/40 px-5 py-2.5 text-sm font-semibold text-foreground backdrop-blur transition hover:bg-black/60"
@@ -62,13 +62,13 @@ function Index() {
               Weekly Rankings
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <button
-              onClick={() => navigate({ to: "/analyze" })}
+            <Link
+              to="/portfolio"
               className="inline-flex items-center gap-2 rounded-md border border-white/15 bg-black/40 px-5 py-2.5 text-sm font-semibold text-foreground backdrop-blur transition hover:bg-black/60"
             >
-              Analyse a Company
+              Portfolio Builder
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Link>
           </div>
 
           {/* Quick picks */}
