@@ -36,7 +36,9 @@ User Request
               6 sections · source IDs · per-claim traceability
 ```
 
-See `DeepDiligence_Architecture.xml` for a draw.io diagram.
+![DeepDiligence Architecture](docs/architecture.jpg)
+
+> Source: `DeepDiligence_Architecture.xml` (draw.io)
 
 ---
 
