@@ -144,23 +144,30 @@ def get_revenue_data(ticker: str) -> list[dict[str, Any]]:
 
     us_gaap = facts.get("facts", {}).get("us-gaap", {})
 
-    # Try common revenue field names
+    # Companies change revenue tags over time (e.g. after ASC 606 many moved from
+    # "Revenues" to "RevenueFromContractWithCustomerExcludingAssessedTax"), and the
+    # old tag stays in the data. Read every candidate and keep the tag whose
+    # latest reported period is the most recent, so the figures are current.
     revenue_fields = ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet"]
+    best_results: list[dict[str, Any]] = []
+    best_latest_end = ""
     for field in revenue_fields:
-        if field in us_gaap:
-            units = us_gaap[field].get("units", {})
-            usd_entries = units.get("USD", [])
-            results = []
-            for entry in usd_entries:
-                if entry.get("form") in ("10-K", "10-Q"):
-                    results.append({
-                        "period": f"{entry.get('start', 'N/A')} to {entry.get('end', 'N/A')}",
-                        "value": entry.get("val"),
-                        "unit": "USD",
-                        "filed_date": entry.get("filed", ""),
-                        "form": entry.get("form", ""),
-                    })
-            if results:
-                return results
+        if field not in us_gaap:
+            continue
+        usd_entries = us_gaap[field].get("units", {}).get("USD", [])
+        results = []
+        latest_end = ""
+        for entry in usd_entries:
+            if entry.get("form") in ("10-K", "10-Q"):
+                results.append({
+                    "period": f"{entry.get('start', 'N/A')} to {entry.get('end', 'N/A')}",
+                    "value": entry.get("val"),
+                    "unit": "USD",
+                    "filed_date": entry.get("filed", ""),
+                    "form": entry.get("form", ""),
+                })
+                latest_end = max(latest_end, str(entry.get("end", "")))
+        if results and (not best_results or latest_end > best_latest_end):
+            best_results, best_latest_end = results, latest_end
 
-    return []
+    return best_results

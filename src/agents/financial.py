@@ -11,7 +11,10 @@ from src.models.schemas import AgentSubReport
 
 logger = logging.getLogger(__name__)
 
-# Tool definitions in OpenAI format
+# Most recent revenue periods handed to the model per call
+_MAX_REVENUE_ENTRIES = 40
+
+# Tool definitions (function-calling format; served to the Claude CLI over MCP)
 _FINANCIAL_TOOLS: list[dict] = [
     {
         "type": "function",
@@ -100,6 +103,8 @@ class FinancialAgent(ReactAgent):
     falls back to web scraping of press releases and news mentions.
     """
 
+    TOOLS = _FINANCIAL_TOOLS
+
     @property
     def agent_name(self) -> str:
         return "financial_analyst"
@@ -122,7 +127,15 @@ class FinancialAgent(ReactAgent):
             JSON-serializable result from the underlying data function.
         """
         if name == "get_revenue_data":
-            return get_revenue_data(tool_input["ticker"])
+            entries = get_revenue_data(tool_input["ticker"])
+            # EDGAR returns every period since the first XBRL filing, oldest first.
+            # Keep the most recent periods so the agent sees current numbers.
+            entries = sorted(
+                entries,
+                key=lambda e: (str(e.get("period", "")).split(" to ")[-1], e.get("filed_date") or ""),
+                reverse=True,
+            )
+            return entries[:_MAX_REVENUE_ENTRIES]
 
         if name == "get_filings":
             return get_filings(
@@ -168,8 +181,6 @@ class FinancialAgent(ReactAgent):
         _, collected = self._run_react_loop(
             system_prompt=FINANCIAL_REACT_SYSTEM,
             initial_user_message=initial_message,
-            tools=_FINANCIAL_TOOLS,
-            tool_executor=self._execute_tool,
         )
         return collected
 

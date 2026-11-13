@@ -6,16 +6,16 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Load .env from project root
-_project_root = Path(__file__).resolve().parent.parent.parent
-load_dotenv(_project_root / ".env")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 
-def get_openai_api_key() -> str:
-    """Return the OpenAI API key from environment."""
-    key = os.getenv("OPENAI_API_KEY", "")
-    if not key:
-        raise ValueError("OPENAI_API_KEY not set in environment")
-    return key
+def _env_flag(name: str, default: bool = False) -> bool:
+    """Read a boolean environment variable (1/true/yes/on → True)."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def get_news_api_key() -> str:
@@ -35,9 +35,29 @@ def get_sec_edgar_user_agent() -> str:
 
 
 # Paths
-CACHE_DIR = _project_root / "data" / "cache"
-BENCHMARKS_DIR = _project_root / "data" / "benchmarks"
+CACHE_DIR = PROJECT_ROOT / "data" / "cache"
+BENCHMARKS_DIR = PROJECT_ROOT / "data" / "benchmarks"
 
-# LLM settings — gpt-5.4-mini for all agents and synthesis
-AGENT_MODEL = "gpt-5.4-mini"
-SYNTHESIS_MODEL = "gpt-5.4-mini"
+# ─── LLM settings ─────────────────────────────────────────────────────────────
+# Every LLM call goes through the Claude Code CLI (`claude -p`), which uses the
+# login of whoever runs the backend. No API key is read by this project.
+AGENT_MODEL = os.getenv("DD_AGENT_MODEL", "claude-opus-5-5")
+SYNTHESIS_MODEL = os.getenv("DD_SYNTHESIS_MODEL", "claude-opus-5-5")
+
+# Optional explicit path to the `claude` binary (otherwise found on PATH).
+CLAUDE_CLI_PATH = os.getenv("CLAUDE_CLI_PATH", "")
+
+# Wall-clock limits per CLI call, in seconds.
+CLAUDE_GATHER_TIMEOUT = int(os.getenv("DD_GATHER_TIMEOUT", "900"))
+CLAUDE_ANALYZE_TIMEOUT = int(os.getenv("DD_ANALYZE_TIMEOUT", "600"))
+CLAUDE_SYNTHESIS_TIMEOUT = int(os.getenv("DD_SYNTHESIS_TIMEOUT", "900"))
+
+# ─── Caching ──────────────────────────────────────────────────────────────────
+# Off by default: every run gathers fresh data and makes fresh LLM calls.
+# Set DD_USE_CACHE=1 to bring back disk caching (data sources, agent reports, memos).
+USE_CACHE = _env_flag("DD_USE_CACHE", default=False)
+
+
+def cache_enabled() -> bool:
+    """Return True when disk caching is switched on (read at call time)."""
+    return USE_CACHE

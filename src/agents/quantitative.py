@@ -24,13 +24,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from openai import OpenAI
-
 from src.agents.base_agent import BaseAgent
 from src.data.price_history import fetch_price_history, run_ml_prediction
 from src.models.prompts import PRODUCE_ANALYSIS_TOOL, QUANT_ANALYZE_SYSTEM
 from src.models.schemas import AgentClaim, AgentSubReport, Source, SourceType
-from src.utils.config import AGENT_MODEL, CACHE_DIR, get_openai_api_key
+from src.utils.claude_cli import extract_json_object, run_claude
+from src.utils.config import AGENT_MODEL, CACHE_DIR, CLAUDE_ANALYZE_TIMEOUT, cache_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +53,6 @@ class QuantitativeAgent(BaseAgent):
 
     def __init__(self, company_name: str, ticker: str | None = None, **kwargs: Any) -> None:
         super().__init__(company_name, ticker, **kwargs)
-        self._client = OpenAI(api_key=get_openai_api_key())
 
     # ─── Identity ────────────────────────────────────────────────────────────
 
@@ -83,7 +81,10 @@ class QuantitativeAgent(BaseAgent):
         return cache_dir / f"{key}_report.json"
 
     def run(self) -> AgentSubReport:
-        """Run with disk caching — same pattern as ReactAgent.run()."""
+        """Run the pipeline; disk cache is used only when DD_USE_CACHE=1."""
+        if not cache_enabled():
+            return super().run()
+
         path = self._cache_path()
         if path.exists():
             self.logger.info("Cache hit — loading quantitative report from %s", path.name)
@@ -211,55 +212,44 @@ class QuantitativeAgent(BaseAgent):
             f"{json.dumps(ml_result, indent=2, default=str)}\n\n"
             "Interpret this quantitative analysis into structured investment findings.\n"
             "Source ID for all claims: 'src_price_history'.\n"
-            "Call produce_analysis with your structured findings."
+            "Return your structured findings."
         )
 
-        response = self._client.chat.completions.create(
+        result = run_claude(
+            prompt=user_message,
+            system_prompt=QUANT_ANALYZE_SYSTEM,
             model=AGENT_MODEL,
-            messages=[
-                {"role": "system", "content": QUANT_ANALYZE_SYSTEM},
-                {"role": "user",   "content": user_message},
-            ],
-            tools=[PRODUCE_ANALYSIS_TOOL],
-            tool_choice={"type": "function", "function": {"name": "produce_analysis"}},
-            max_completion_tokens=4096,
+            json_schema=PRODUCE_ANALYSIS_TOOL["function"]["parameters"],
+            timeout=CLAUDE_ANALYZE_TIMEOUT,
+            raise_on_error=False,
         )
 
-        message = response.choices[0].message
-        if message.tool_calls:
-            for tool_call in message.tool_calls:
-                if tool_call.function.name == "produce_analysis":
-                    try:
-                        tool_input = json.loads(tool_call.function.arguments)
-                    except json.JSONDecodeError as exc:
-                        self.logger.error("Failed to parse produce_analysis JSON: %s", exc)
-                        break
+        tool_input = result.structured or extract_json_object(result.text)
+        if tool_input:
+            findings: list[AgentClaim] = [
+                AgentClaim(
+                    text=str(f.get("text", "")),
+                    source_ids=["src_price_history"],  # always our single source
+                    confidence=float(max(0.0, min(1.0, f.get("confidence", 0.5)))),
+                )
+                for f in tool_input.get("findings", [])
+            ]
 
-                    findings: list[AgentClaim] = [
-                        AgentClaim(
-                            text=str(f.get("text", "")),
-                            source_ids=["src_price_history"],  # always our single source
-                            confidence=float(max(0.0, min(1.0, f.get("confidence", 0.5)))),
-                        )
-                        for f in tool_input.get("findings", [])
-                    ]
+            return AgentSubReport(
+                agent_name=self.agent_name,
+                findings=findings,
+                sources=[source],
+                confidence_score=float(
+                    max(0.0, min(1.0, tool_input.get("confidence_score", 0.5)))
+                ),
+                conflicts=[],
+                raw_data_summary=str(tool_input.get("raw_data_summary", "")),
+            )
 
-                    return AgentSubReport(
-                        agent_name=self.agent_name,
-                        findings=findings,
-                        sources=[source],
-                        confidence_score=float(
-                            max(0.0, min(1.0, tool_input.get("confidence_score", 0.5)))
-                        ),
-                        conflicts=[],
-                        raw_data_summary=str(
-                            tool_input.get("raw_data_summary", "")
-                        ),
-                    )
-
-        # ── Fallback: LLM didn't call the tool — build minimal report ──
+        # ── Fallback: no structured reply — build minimal report from the ML output ──
         self.logger.error(
-            "produce_analysis not returned for %s — using minimal fallback", ticker
+            "Structured analysis not returned for %s (%s) — using minimal fallback",
+            ticker, result.error or "no JSON in reply",
         )
         pred    = ml_result.get("prediction", "UNKNOWN")
         proba   = ml_result.get("probabilities", {})

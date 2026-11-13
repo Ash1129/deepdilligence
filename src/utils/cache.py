@@ -1,4 +1,8 @@
-"""Disk-based caching decorator to save API costs during development."""
+"""Disk-based caching decorator.
+
+Caching is OFF by default (see `USE_CACHE` in src/utils/config.py), so every
+call hits the live source. Set DD_USE_CACHE=1 to turn it back on.
+"""
 
 import functools
 import hashlib
@@ -7,6 +11,7 @@ import logging
 from pathlib import Path
 from typing import Any, Callable
 
+from src.utils import config
 from src.utils.config import CACHE_DIR
 
 logger = logging.getLogger(__name__)
@@ -27,6 +32,10 @@ def disk_cache(subfolder: str = "general") -> Callable:
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Caching disabled → always fetch live, never read or write disk.
+            if not config.cache_enabled():
+                return func(*args, **kwargs)
+
             cache_dir = CACHE_DIR / subfolder
             cache_dir.mkdir(parents=True, exist_ok=True)
 

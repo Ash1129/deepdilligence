@@ -12,11 +12,11 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from openai import OpenAI
 from pydantic import BaseModel, Field
 
 from src.models.schemas import InvestmentMemo
-from src.utils.config import SYNTHESIS_MODEL, get_openai_api_key
+from src.utils.claude_cli import run_claude
+from src.utils.config import CLAUDE_SYNTHESIS_TIMEOUT, SYNTHESIS_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ class WeeklyReport(BaseModel):
     model_used: str
 
 
-# ─── OpenAI tool definition ───────────────────────────────────────────────────
+# ─── Output JSON schema (function-calling format) ───────────────────────────────────────────────────
 
 _RECOMMEND_TOOL = {
     "type": "function",
@@ -140,9 +140,6 @@ IMPORTANT — keep your output SHORT to avoid truncation:
 class RecommendationEngine:
     """Reads all memos and produces a ranked WeeklyReport via LLM."""
 
-    def __init__(self) -> None:
-        self._client = OpenAI(api_key=get_openai_api_key())
-
     def generate(self, memos: dict[str, InvestmentMemo]) -> WeeklyReport:
         """Generate a weekly recommendation report from a dict of ticker → memo.
 
@@ -163,32 +160,30 @@ class RecommendationEngine:
         user_message = (
             f"You are evaluating {len(memos)} companies for this week's investment report.\n\n"
             f"{memo_text}\n\n"
-            "Produce your ranked recommendation report now. "
-            "Call produce_weekly_recommendations with your complete analysis."
+            "Produce your ranked recommendation report now, as structured output."
         )
 
-        response = self._client.chat.completions.create(
+        result = run_claude(
+            prompt=user_message,
+            system_prompt=_SYSTEM_PROMPT,
             model=SYNTHESIS_MODEL,
-            messages=[
-                {"role": "system",  "content": _SYSTEM_PROMPT},
-                {"role": "user",    "content": user_message},
-            ],
-            tools=[_RECOMMEND_TOOL],
-            tool_choice={"type": "function", "function": {"name": "produce_weekly_recommendations"}},
-            max_completion_tokens=32000,
+            json_schema=_RECOMMEND_TOOL["function"]["parameters"],
+            timeout=CLAUDE_SYNTHESIS_TIMEOUT,
+            raise_on_error=False,
         )
 
-        message = response.choices[0].message
-        if not message.tool_calls:
-            raise RuntimeError("Recommendation tool not called by model")
-
-        raw_args = message.tool_calls[0].function.arguments
-        try:
-            raw = json.loads(raw_args)
-        except json.JSONDecodeError as exc:
-            # Response was truncated — try to salvage by truncating to last complete object
-            logger.warning("Tool call JSON truncated (%s) — attempting partial recovery", exc)
-            raw = self._recover_truncated_json(raw_args)
+        raw = result.structured
+        if raw is None:
+            if not result.text:
+                raise RuntimeError(
+                    f"Recommendation model returned nothing ({result.error or 'no output'})"
+                )
+            try:
+                raw = json.loads(result.text)
+            except json.JSONDecodeError as exc:
+                # Reply was cut off — salvage up to the last complete rating object
+                logger.warning("Recommendation JSON invalid (%s) — attempting partial recovery", exc)
+                raw = self._recover_truncated_json(result.text)
 
         return self._build_report(raw, memos)
 
