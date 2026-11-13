@@ -11,7 +11,7 @@ from src.models.schemas import AgentSubReport
 
 logger = logging.getLogger(__name__)
 
-# Tool definitions in OpenAI format
+# Tool definitions (function-calling format; served to the Claude CLI over MCP)
 _MARKET_TOOLS: list[dict] = [
     {
         "type": "function",
@@ -76,6 +76,8 @@ class MarketAgent(ReactAgent):
     - Competitor websites (for positioning comparison)
     - Industry reports and analyst articles (via web scraping)
     """
+
+    TOOLS = _MARKET_TOOLS
 
     @property
     def agent_name(self) -> str:
@@ -144,8 +146,6 @@ class MarketAgent(ReactAgent):
         _, collected = self._run_react_loop(
             system_prompt=MARKET_REACT_SYSTEM,
             initial_user_message=initial_message,
-            tools=_MARKET_TOOLS,
-            tool_executor=self._execute_tool,
         )
         return collected
 

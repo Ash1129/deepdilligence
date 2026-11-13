@@ -10,7 +10,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Set env vars before importing project modules
-os.environ["OPENAI_API_KEY"] = "test-openai-key"
 os.environ["NEWS_API_KEY"] = "test-news-api-key"
 os.environ["SEC_EDGAR_USER_AGENT"] = "TestBot test@example.com"
 
@@ -83,7 +82,7 @@ class TestBuildSubreport:
             def analyze(self, raw_data: dict) -> AgentSubReport:
                 return self._produce_structured_report("sys", raw_data)
 
-        with patch("src.agents.react_agent.OpenAI"):
+        with patch("src.agents.react_agent.run_claude"):
             return ConcreteAgent("TestCo", "TEST")
 
     def test_basic_subreport(self):
@@ -185,7 +184,7 @@ class TestAgentProperties:
 
     def _make_agent(self, cls_path: str, *args, **kwargs):
         module_path, class_name = cls_path.rsplit(".", 1)
-        with patch("src.agents.react_agent.OpenAI"):
+        with patch("src.agents.react_agent.run_claude"):
             import importlib
             mod = importlib.import_module(module_path)
             cls = getattr(mod, class_name)
@@ -213,7 +212,7 @@ class TestAgentProperties:
         from src.agents.risk import RiskAgent
         from src.agents.team import TeamAgent
 
-        with patch("src.agents.react_agent.OpenAI"):
+        with patch("src.agents.react_agent.run_claude"):
             agents = [
                 FinancialAgent("Co", "CO"),
                 TeamAgent("Co", "CO"),
@@ -230,14 +229,14 @@ class TestAgentProperties:
 class TestCacheKey:
     def test_different_companies_different_keys(self):
         from src.agents.financial import FinancialAgent
-        with patch("src.agents.react_agent.OpenAI"):
+        with patch("src.agents.react_agent.run_claude"):
             a1 = FinancialAgent("Apple Inc", "AAPL")
             a2 = FinancialAgent("Microsoft", "MSFT")
         assert a1._cache_key() != a2._cache_key()
 
     def test_same_company_same_key(self):
         from src.agents.financial import FinancialAgent
-        with patch("src.agents.react_agent.OpenAI"):
+        with patch("src.agents.react_agent.run_claude"):
             a1 = FinancialAgent("Apple Inc", "AAPL")
             a2 = FinancialAgent("Apple Inc", "AAPL")
         assert a1._cache_key() == a2._cache_key()
@@ -245,7 +244,7 @@ class TestCacheKey:
     def test_different_agents_different_keys(self):
         from src.agents.financial import FinancialAgent
         from src.agents.risk import RiskAgent
-        with patch("src.agents.react_agent.OpenAI"):
+        with patch("src.agents.react_agent.run_claude"):
             fa = FinancialAgent("Apple Inc", "AAPL")
             ra = RiskAgent("Apple Inc", "AAPL")
         # Same company, different agent types → different cache keys
@@ -280,7 +279,7 @@ class TestOrchestrator:
 
     def test_orchestrator_instantiation(self):
         """Orchestrator should instantiate without hitting real APIs."""
-        with patch("src.agents.synthesis.OpenAI"):
+        with patch("src.agents.synthesis.run_claude"):
             from src.orchestrator import Orchestrator
             orch = Orchestrator("TestCo", ticker="TC")
             assert orch.company_name == "TestCo"

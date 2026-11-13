@@ -1,5 +1,7 @@
 # Core
-openai>=1.30.0
+# LLM calls go through the Claude Code CLI (`claude -p`), not a Python SDK.
+# Install it separately and log in once: https://claude.com/claude-code
+mcp>=1.2.0            # serves the agents' data tools to the CLI
 pydantic>=2.0.0
 python-dotenv>=1.0.0
 

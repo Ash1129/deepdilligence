@@ -24,7 +24,6 @@ from src.models.schemas import (
 # Set test env vars before importing modules that read config
 os.environ["SEC_EDGAR_USER_AGENT"] = "TestBot test@example.com"
 os.environ["NEWS_API_KEY"] = "test-news-api-key"
-os.environ["OPENAI_API_KEY"] = "test-openai-key"
 
 from src.data.edgar import (
     EDGAR_COMPANY_TICKERS_URL,
@@ -125,6 +124,7 @@ class TestSchemas:
 class TestCache:
     def test_disk_cache_hit_and_miss(self, tmp_path, monkeypatch):
         monkeypatch.setattr("src.utils.cache.CACHE_DIR", tmp_path)
+        monkeypatch.setattr("src.utils.config.USE_CACHE", True)
         call_count = 0
 
         @disk_cache(subfolder="test")
@@ -147,6 +147,7 @@ class TestCache:
 
     def test_clear_cache(self, tmp_path, monkeypatch):
         monkeypatch.setattr("src.utils.cache.CACHE_DIR", tmp_path)
+        monkeypatch.setattr("src.utils.config.USE_CACHE", True)
 
         @disk_cache(subfolder="cleartest")
         def fn(x: int) -> dict:
@@ -159,6 +160,24 @@ class TestCache:
         deleted = clear_cache("cleartest")
         assert deleted == 2
         assert len(list((tmp_path / "cleartest").glob("*.json"))) == 0
+
+
+    def test_disk_cache_is_bypassed_by_default(self, tmp_path, monkeypatch):
+        """With caching off (the default) every call runs live and nothing is written."""
+        monkeypatch.setattr("src.utils.cache.CACHE_DIR", tmp_path)
+        monkeypatch.setattr("src.utils.config.USE_CACHE", False)
+        call_count = 0
+
+        @disk_cache(subfolder="off")
+        def fn(x: int) -> dict:
+            nonlocal call_count
+            call_count += 1
+            return {"v": x}
+
+        assert fn(1) == {"v": 1}
+        assert fn(1) == {"v": 1}
+        assert call_count == 2
+        assert not (tmp_path / "off").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -269,6 +288,37 @@ class TestEdgar:
         assert len(revenue) == 2
         assert revenue[0]["value"] == 100000000
         assert revenue[0]["unit"] == "USD"
+
+    @responses.activate
+    def test_get_revenue_data_prefers_tag_with_latest_period(self):
+        """A stale legacy tag must not hide the tag the company reports under today."""
+        responses.add(responses.GET, EDGAR_COMPANY_TICKERS_URL, json=MOCK_TICKERS, status=200)
+        mock_facts = {
+            "facts": {
+                "us-gaap": {
+                    "Revenues": {
+                        "units": {"USD": [
+                            {"start": "2017-10-01", "end": "2018-09-29", "val": 1, "form": "10-K", "filed": "2018-11-05"},
+                        ]}
+                    },
+                    "RevenueFromContractWithCustomerExcludingAssessedTax": {
+                        "units": {"USD": [
+                            {"start": "2024-09-29", "end": "2025-09-27", "val": 2, "form": "10-K", "filed": "2025-10-31"},
+                            {"start": "2025-09-28", "end": "2026-09-26", "val": 3, "form": "10-K", "filed": "2026-11-03"},
+                        ]}
+                    },
+                }
+            }
+        }
+        responses.add(
+            responses.GET,
+            EDGAR_XBRL_COMPANYFACTS_URL.format(cik="0000320193"),
+            json=mock_facts,
+            status=200,
+        )
+
+        revenue = get_revenue_data("AAPL")
+        assert [r["value"] for r in revenue] == [2, 3]
 
 
 # ---------------------------------------------------------------------------

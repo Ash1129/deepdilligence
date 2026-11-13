@@ -11,7 +11,7 @@ from src.models.schemas import AgentSubReport
 
 logger = logging.getLogger(__name__)
 
-# Tool definitions in OpenAI format
+# Tool definitions (function-calling format; served to the Claude CLI over MCP)
 _TEAM_TOOLS: list[dict] = [
     {
         "type": "function",
@@ -68,6 +68,8 @@ class TeamAgent(ReactAgent):
     - LinkedIn company page (headcount signals)
     - General web scraping for culture and team news
     """
+
+    TOOLS = _TEAM_TOOLS
 
     @property
     def agent_name(self) -> str:
@@ -128,8 +130,6 @@ class TeamAgent(ReactAgent):
         _, collected = self._run_react_loop(
             system_prompt=TEAM_REACT_SYSTEM,
             initial_user_message=initial_message,
-            tools=_TEAM_TOOLS,
-            tool_executor=self._execute_tool,
         )
         return collected
 

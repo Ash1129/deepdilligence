@@ -1,7 +1,7 @@
 """Batch runner — runs the DeepDiligence pipeline on every stock in the watchlist.
 
-Caching means previously-analysed companies are returned instantly; only new
-or stale entries make live API calls.
+Caching is off by default, so every company is analysed fresh on every run.
+With DD_USE_CACHE=1, previously-analysed companies are loaded from disk instead.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from pathlib import Path
 
 from src.models.schemas import InvestmentMemo
 from src.orchestrator import Orchestrator
-from src.utils.config import CACHE_DIR
+from src.utils.config import CACHE_DIR, cache_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ def _run_one(stock: dict, force_refresh: bool) -> tuple[dict, InvestmentMemo | N
     company = stock["company"]
     ticker  = stock["ticker"]
 
-    if not force_refresh:
+    if cache_enabled() and not force_refresh:
         cached = load_cached_memo(ticker)
         if cached:
             logger.info("Cache hit for %s — skipping pipeline run", ticker)
@@ -68,7 +68,8 @@ def _run_one(stock: dict, force_refresh: bool) -> tuple[dict, InvestmentMemo | N
     logger.info("Running pipeline for %s (%s)…", company, ticker)
     try:
         memo = Orchestrator(company_name=company, ticker=ticker).run()
-        save_memo(memo, ticker)
+        if cache_enabled():
+            save_memo(memo, ticker)
         return stock, memo
     except Exception as exc:
         logger.error("Pipeline failed for %s: %s", ticker, exc, exc_info=True)
@@ -85,7 +86,8 @@ def run_batch(
     Args:
         force_refresh: If True, ignore cached memos and re-run all pipelines.
         max_workers: How many companies to analyse concurrently.
-                     Keep low (2-3) to avoid OpenAI rate limits.
+                     Keep low (2-3): each company already runs several
+                     Claude CLI processes in parallel.
         on_complete: Optional callback(stock, memo) called after each company.
 
     Returns:

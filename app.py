@@ -577,7 +577,7 @@ def main() -> None:
 
         st.sidebar.markdown("---")
         st.sidebar.markdown(
-            "<small>OpenAI GPT-5.4-mini / GPT-5.5 · DeepDiligence v1 · Cornell ENMGT5400</small>",
+            "<small>Claude via Claude Code CLI · DeepDiligence v1 · Cornell ENMGT5400</small>",
             unsafe_allow_html=True,
         )
 

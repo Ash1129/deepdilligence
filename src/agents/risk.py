@@ -23,7 +23,7 @@ _RISK_QUERIES = [
     "{company} recall",
 ]
 
-# Tool definitions in OpenAI format
+# Tool definitions (function-calling format; served to the Claude CLI over MCP)
 _RISK_TOOLS: list[dict] = [
     {
         "type": "function",
@@ -94,6 +94,8 @@ class RiskAgent(ReactAgent):
     This agent deliberately searches for negative signals. It reports what it finds —
     including the absence of significant risk signals when the search comes up clean.
     """
+
+    TOOLS = _RISK_TOOLS
 
     @property
     def agent_name(self) -> str:
@@ -172,8 +174,6 @@ class RiskAgent(ReactAgent):
         _, collected = self._run_react_loop(
             system_prompt=RISK_REACT_SYSTEM,
             initial_user_message=initial_message,
-            tools=_RISK_TOOLS,
-            tool_executor=self._execute_tool,
         )
         return collected
 

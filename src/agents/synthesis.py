@@ -7,8 +7,6 @@ from typing import Any
 
 import re
 
-from openai import OpenAI
-
 from src.evaluation.claim_verification import verify_memo_claims
 from src.models.prompts import PRODUCE_MEMO_TOOL, SYNTHESIS_SYSTEM
 from src.models.schemas import (
@@ -19,7 +17,8 @@ from src.models.schemas import (
     Source,
     SynthesizedSection,
 )
-from src.utils.config import SYNTHESIS_MODEL, get_openai_api_key
+from src.utils.claude_cli import run_claude
+from src.utils.config import CLAUDE_SYNTHESIS_TIMEOUT, SYNTHESIS_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,6 @@ class SynthesisAgent:
 
     def __init__(self, company_name: str) -> None:
         self.company_name = company_name
-        self._client = OpenAI(api_key=get_openai_api_key())
         self.logger = logging.getLogger(f"{__name__}.synthesis")
 
     # ─── Public API ──────────────────────────────────────────────────────────
@@ -71,56 +69,42 @@ class SynthesisAgent:
             f"{formatted}\n\n"
             "Synthesize these reports into a unified investment memo.\n"
             "Pay special attention to cross-agent conflicts — flag every one explicitly.\n"
-            "Call produce_investment_memo with your complete analysis."
+            "Return your complete analysis as the structured investment memo."
         )
 
-        response = self._client.chat.completions.create(
+        # One tool-free call, constrained to the investment-memo JSON schema.
+        result = run_claude(
+            prompt=user_message,
+            system_prompt=SYNTHESIS_SYSTEM,
             model=SYNTHESIS_MODEL,
-            messages=[
-                {"role": "system", "content": SYNTHESIS_SYSTEM},
-                {"role": "user", "content": user_message},
-            ],
-            tools=[PRODUCE_MEMO_TOOL],
-            tool_choice={"type": "function", "function": {"name": "produce_investment_memo"}},
-            max_completion_tokens=32000,
+            json_schema=PRODUCE_MEMO_TOOL["function"]["parameters"],
+            timeout=CLAUDE_SYNTHESIS_TIMEOUT,
+            raise_on_error=False,
         )
 
-        message = response.choices[0].message
+        # ── Primary path: structured output returned as expected ──
+        payload = result.structured
 
-        # ── Primary path: forced tool call returned as expected ──
-        if message.tool_calls:
-            for tool_call in message.tool_calls:
-                if tool_call.function.name == "produce_investment_memo":
-                    try:
-                        tool_input = json.loads(tool_call.function.arguments)
-                    except json.JSONDecodeError as e:
-                        self.logger.error("Failed to parse memo arguments: %s", e)
-                        break
-                    memo = self._build_memo(
-                        tool_input=tool_input,
-                        sub_reports=sub_reports,
-                        extra_metadata=extra_metadata or {},
-                    )
-                    self.logger.info(
-                        "Synthesis complete — %d sections, overall_confidence=%.2f",
-                        len(memo.sections),
-                        memo.overall_confidence,
-                    )
-                    return memo
+        # ── Fallback: model wrote JSON as text instead ──
+        if payload is None and result.text:
+            self.logger.warning(
+                "Structured memo not returned (%s). Attempting JSON extraction from text.",
+                result.error or "no structured_output",
+            )
+            payload = self._extract_json_from_text(result.text)
 
-        # ── Fallback: model returned text instead of tool call ──
-        # Some models ignore tool_choice and write JSON as text; try to extract it.
-        self.logger.warning(
-            "produce_investment_memo tool not called (finish_reason=%s). "
-            "Attempting JSON extraction from text response.",
-            response.choices[0].finish_reason,
-        )
-        if message.content:
-            self.logger.debug("Raw synthesis text (first 500 chars): %s", message.content[:500])
-            extracted = self._extract_json_from_text(message.content)
-            if extracted:
-                self.logger.info("Successfully extracted JSON from text fallback")
-                return self._build_memo(extracted, sub_reports, extra_metadata or {})
+        if payload:
+            memo = self._build_memo(
+                tool_input=payload,
+                sub_reports=sub_reports,
+                extra_metadata=extra_metadata or {},
+            )
+            self.logger.info(
+                "Synthesis complete — %d sections, overall_confidence=%.2f",
+                len(memo.sections),
+                memo.overall_confidence,
+            )
+            return memo
 
         self.logger.error("Synthesis completely failed — returning empty memo")
         return InvestmentMemo(
@@ -128,7 +112,7 @@ class SynthesisAgent:
             executive_summary="Synthesis failed: the model did not return a structured memo.",
             sections=[],
             overall_confidence=0.0,
-            metadata={"error": "tool call not returned"},
+            metadata={"error": result.error or "structured memo not returned"},
         )
 
     # ─── JSON fallback extraction ─────────────────────────────────────────────

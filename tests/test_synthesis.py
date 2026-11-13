@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-os.environ["OPENAI_API_KEY"] = "test-openai-key"
 os.environ["NEWS_API_KEY"] = "test-news-api-key"
 os.environ["SEC_EDGAR_USER_AGENT"] = "TestBot test@example.com"
 
@@ -344,7 +343,7 @@ class TestSynthesisBuildMemo:
     """Test SynthesisAgent._build_memo() without making LLM calls."""
 
     def _get_synthesis_agent(self) -> "SynthesisAgent":
-        with patch("src.agents.synthesis.OpenAI"):
+        with patch("src.agents.synthesis.run_claude"):
             from src.agents.synthesis import SynthesisAgent
             return SynthesisAgent("TestCo")
 

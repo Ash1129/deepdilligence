@@ -77,7 +77,7 @@ $10,000 allocated using AI-rated picks from Jan 2024 to May 2026:
 | Layer | Tech |
 |-------|------|
 | Backend | Python 3.11, FastAPI, uvicorn |
-| LLM | Anthropic Claude API (`claude-sonnet-4-20250514`) |
+| LLM | Claude via the Claude Code CLI (`claude -p`), `claude-opus-5-5` by default |
 | ML | scikit-learn RandomForestClassifier, numpy |
 | Market Data | yfinance |
 | Frontend | React, TypeScript, TanStack Router, Tailwind CSS |
@@ -103,10 +103,11 @@ cp .env.example .env   # fill in your keys
 `.env` keys:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...
 NEWS_API_KEY=...
 SEC_EDGAR_USER_AGENT="DeepDiligence your-email@example.com"
 ```
+
+There is no LLM API key. Every LLM call runs through the [Claude Code CLI](https://claude.com/claude-code): install it, run `claude` once to log in, and the backend uses that login. Optional overrides: `DD_AGENT_MODEL`, `DD_SYNTHESIS_MODEL`, `CLAUDE_CLI_PATH`.
 
 SEC EDGAR requires a descriptive User-Agent with a contact email.
 
@@ -179,7 +180,7 @@ streamlit run app.py
 
 ## Caching
 
-All expensive calls cache under `data/cache/` (excluded from git):
+**Caching is off by default**, so every analysis gathers live data and makes fresh LLM calls. Set `DD_USE_CACHE=1` to turn the disk cache back on. When enabled, expensive calls cache under `data/cache/` (excluded from git):
 
 | Path | Contents |
 |------|---------|
@@ -195,7 +196,8 @@ All expensive calls cache under `data/cache/` (excluded from git):
 
 - Private companies have limited coverage — no SEC EDGAR filings
 - Quant agent requires a ticker and at least 120 days of public price history
-- NewsAPI free tier is 100 req/day — cached aggressively to stay within limits
+- NewsAPI free tier is 100 req/day and results are no longer cached; once it is exhausted the agents fall back to web search
+- A full analysis takes several minutes, because each run researches from scratch through the Claude CLI
 - Web scraping is best-effort; JS-heavy or bot-blocking pages may return partial data
 - Portfolio Builder requires a weekly report to exist — generate one first
 
